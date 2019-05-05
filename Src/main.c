@@ -22,6 +22,8 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "fatfs.h"
+#include "includes.h"
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -63,6 +65,7 @@ void StartDefaultTask(void const * argument);
 
 /* USER CODE END 0 */
 
+
 /**
   * @brief  The application entry point.
   * @retval int
@@ -76,7 +79,8 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+  main_printf(">>>>>>>>>>>> POWER ON <<<<<<<<<<<\n"); 
+	HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -231,7 +235,12 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(500);
+		main_printf("test\n");
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_SET);
+    osDelay(500);
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+
   }
   /* USER CODE END 5 */ 
 }
