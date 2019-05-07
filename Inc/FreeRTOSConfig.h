@@ -123,7 +123,16 @@ standard names. */
               to prevent overwriting SysTick_Handler defined within STM32Cube HAL */
 /* #define xPortSysTickHandler SysTick_Handler */
 
-/* USER CODE BEGIN Defines */   	      
+/* USER CODE BEGIN Defines */ 
+
+#define INCLUDE_xTaskGetCurrentTaskHandle 	 1		//get currnt task handle enable
+
+extern void trace_TASK_IN(void);
+extern void trace_TASK_OUT(void);
+#define traceTASK_SWITCHED_IN()		trace_TASK_IN()
+#define traceTASK_SWITCHED_OUT()    trace_TASK_OUT()
+
+
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 /* USER CODE END Defines */ 
 
