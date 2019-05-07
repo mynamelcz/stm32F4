@@ -15,6 +15,7 @@ osThreadId tast_1_hd;
 void task_1_fun(void const *param)
 {
 	(void)(param);
+    
 	while(1)
 	{
 	    osDelay(500);	
