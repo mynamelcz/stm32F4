@@ -740,7 +740,6 @@ osStatus osMutexDelete (osMutexId mutex_id)
 
   return osOK;
 }
-
 /********************  Semaphore Management Functions **************************/
 
 #if (defined (osFeature_Semaphore)  &&  (osFeature_Semaphore != 0))
