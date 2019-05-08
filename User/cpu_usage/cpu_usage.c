@@ -15,7 +15,9 @@ osThreadId idle_task_hd = NULL;
 void vApplicationIdleHook(void)
 {
 	if(idle_task_hd == NULL){
+		taskENTER_CRITICAL();
 		idle_task_hd = osThreadGetId();
+		taskEXIT_CRITICAL();
 	}
 }
 

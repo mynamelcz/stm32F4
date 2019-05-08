@@ -125,6 +125,7 @@ standard names. */
 
 /* USER CODE BEGIN Defines */ 
 
+#define configUSE_TRACE_FACILITY 			 1	    //get task inf
 #define INCLUDE_xTaskGetCurrentTaskHandle 	 1		//get currnt task handle enable
 
 extern void trace_TASK_IN(void);

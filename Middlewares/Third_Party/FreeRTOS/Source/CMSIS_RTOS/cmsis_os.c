@@ -797,7 +797,7 @@ osSemaphoreId osSemaphoreCreate (const osSemaphoreDef_t *semaphore_def, int32_t 
   }
 #else  // configSUPPORT_STATIC_ALLOCATION == 0  && configSUPPORT_DYNAMIC_ALLOCATION == 1
   osSemaphoreId sema;
- 
+
   if (count == 1) {
     vSemaphoreCreateBinary(sema);
     return sema;
