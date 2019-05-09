@@ -21,9 +21,16 @@ osThreadId tast_3_hd = NULL;
 
 
 osSemaphoreId sem_test_id = NULL;
+osMutexId mute_test_id = NULL;
 
 
 
+
+
+
+
+osStatus osMutexWait (osMutexId mutex_id, uint32_t millisec);
+osStatus osMutexRelease (osMutexId mutex_id);
 
 
 
@@ -37,15 +44,18 @@ void task_1_fun(void const *param)
 	while(1)
 	{ 
 		task_printf("osPriorityNormal  running  start :%d  \n",++cnt);
-    osSemaphoreWait(sem_test_id, osWaitForever);	
-    task_printf("osPriorityNormal  get sem\n");		
-		osDelay(3000);
+    //osSemaphoreWait(sem_test_id, osWaitForever);
+    osMutexWait (mute_test_id, osWaitForever);		
+    task_printf("osPriorityNormal  get sem\n");	
+		HAL_Delay(1000);		
+		HAL_Delay(1000);	
 		task_printf("osPriorityNormal  delay\n");
+		HAL_Delay(1000);	
+		HAL_Delay(1000);	
+		task_printf("osPriorityNormal  delay\n");
+	  osMutexRelease (mute_test_id);
 		osDelay(1000);
-		
-
-	 
-		osSemaphoreRelease(sem_test_id);
+		//osSemaphoreRelease(sem_test_id);
 	}
 }
 
@@ -56,10 +66,12 @@ void task_2_fun(void const *param)
 	while(1)
 	{
 		task_printf("osPriorityHigh  running  start  :%d  \n",++cnt);
-		osSemaphoreWait(sem_test_id, osWaitForever);	
+
+		osMutexWait (mute_test_id, osWaitForever);	
     task_printf("osPriorityHigh  get sem\n");
 		
-		osSemaphoreRelease(sem_test_id);
+
+		osMutexRelease (mute_test_id);
 		osDelay(1000);
 		task_printf("osPriorityHigh  running  end\n");
 	}
@@ -101,11 +113,13 @@ void task_startup(void)
     osThreadDef(task_3, task_3_fun, TASK_3_PRIO, 0, TASK_2_STACK_SIZE);
     tast_3_hd = osThreadCreate(osThread(task_3),NULL); 
 	
-		sem_test_id = xSemaphoreCreateBinary();
-		if(sem_test_id == NULL){
-			task_printf("osSemaphoreCreate sem_test_id ERR !!\n");
-		}
-		osSemaphoreRelease(sem_test_id);
+//		sem_test_id = xSemaphoreCreateBinary();
+//		if(sem_test_id == NULL){
+//			task_printf("osSemaphoreCreate sem_test_id ERR !!\n");
+//		}
+	//	osSemaphoreRelease(sem_test_id);
+		mute_test_id = xSemaphoreCreateMutex();
+		
 
 }
 
