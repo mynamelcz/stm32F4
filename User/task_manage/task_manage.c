@@ -22,40 +22,35 @@ osThreadId tast_3_hd = NULL;
 
 osSemaphoreId sem_test_id = NULL;
 osMutexId mute_test_id = NULL;
+osTimerId timer1_id = NULL;
+osTimerId timer2_id = NULL;
 
+void soft_timer1_isr(TimerHandle_t Timer_hd)
+{
 
+	task_printf("soft_timer1_isr name:%s\n", pcTimerGetTimerName((TimerHandle_t)(Timer_hd)));
+}
+void soft_timer2_isr(void const *Timer_hd)
+{
+	(void )Timer_hd;
+	task_printf("soft_timer2_isr\n");
+}
 
-
-
-
-
-osStatus osMutexWait (osMutexId mutex_id, uint32_t millisec);
-osStatus osMutexRelease (osMutexId mutex_id);
-
+//osTimerDef(timer1, soft_timer1_isr);
+osTimerDef(timer2, soft_timer2_isr);
 
 
 void task_1_fun(void const *param)
 {
 	(void)param;
-	u32 last_wake_time = osKernelSysTick();
-	static u32 cnt = 0;
 
+	static u32 cnt = 0;
 
 	while(1)
 	{ 
-		task_printf("osPriorityNormal  running  start :%d  \n",++cnt);
-    //osSemaphoreWait(sem_test_id, osWaitForever);
-    osMutexWait (mute_test_id, osWaitForever);		
-    task_printf("osPriorityNormal  get sem\n");	
-		HAL_Delay(1000);		
-		HAL_Delay(1000);	
-		task_printf("osPriorityNormal  delay\n");
-		HAL_Delay(1000);	
-		HAL_Delay(1000);	
-		task_printf("osPriorityNormal  delay\n");
-	  osMutexRelease (mute_test_id);
+		task_printf("task_1_fun  running  start :%d  \n",++cnt);
+
 		osDelay(1000);
-		//osSemaphoreRelease(sem_test_id);
 	}
 }
 
@@ -65,15 +60,11 @@ void task_2_fun(void const *param)
 	static u32 cnt = 0;
 	while(1)
 	{
-		task_printf("osPriorityHigh  running  start  :%d  \n",++cnt);
+		task_printf("task_2_fun  running  start  :%d  \n",++cnt);
 
-		osMutexWait (mute_test_id, osWaitForever);	
-    task_printf("osPriorityHigh  get sem\n");
-		
-
-		osMutexRelease (mute_test_id);
+		task_printf("task_2_fun  running  end\n");
 		osDelay(1000);
-		task_printf("osPriorityHigh  running  end\n");
+		
 	}
 }
 
@@ -84,15 +75,11 @@ void task_3_fun(void const *param)
 	static u32 cnt = 0;
 	while(1)
 	{
-		task_printf("osPriorityAboveNormal  running  start :%d  \n",++cnt);
-    task_printf("osPriorityAboveNormal  running  end\n");
-		task_printf("osPriorityAboveNormal  delay\n");
-		task_printf("osPriorityAboveNormal  delay\n");
-		task_printf("osPriorityAboveNormal  delay\n");
-		task_printf("osPriorityAboveNormal  delay\n");
-		task_printf("osPriorityAboveNormal  delay\n");	
+		task_printf("task_3_fun  running  start :%d  \n",++cnt);
+		
+    task_printf("task_3_fun  running  end\n");
 		osDelay(1000);
-    task_printf("osPriorityAboveNormal  running  end\n");		
+    		
 	}
 }
 
@@ -106,18 +93,24 @@ void task_startup(void)
 
 	
     osThreadDef(task_1, task_1_fun, TASK_1_PRIO, 0, TASK_1_STACK_SIZE);
-    tast_1_hd = osThreadCreate(osThread(task_1),(void *)buf); 
+    tast_1_hd = osThreadCreate(osThread(task_1),(void *)1); 
     osThreadDef(task_2, task_2_fun, TASK_2_PRIO, 0, TASK_2_STACK_SIZE);
     tast_2_hd = osThreadCreate(osThread(task_2),NULL); 
-
     osThreadDef(task_3, task_3_fun, TASK_3_PRIO, 0, TASK_2_STACK_SIZE);
     tast_3_hd = osThreadCreate(osThread(task_3),NULL); 
-	
-//		sem_test_id = xSemaphoreCreateBinary();
-//		if(sem_test_id == NULL){
-//			task_printf("osSemaphoreCreate sem_test_id ERR !!\n");
-//		}
-	//	osSemaphoreRelease(sem_test_id);
+	  
+	  //timer1_id = osTimerCreate(osTimer(timer1), osTimerOnce,     (void *)1);
+	timer1_id =  xTimerCreate((const char *)"timer1",
+                      1000, 
+                      pdTRUE,
+                      (void *) 1,
+                      soft_timer1_isr);
+	  timer2_id = osTimerCreate(osTimer(timer2), osTimerPeriodic, (void *)2);
+		task_printf("osTimerCreate\n");
+	  xTimerStart( timer1_id, 3000);
+			task_printf("xTimerStart\n");
+
+		sem_test_id = xSemaphoreCreateBinary();
 		mute_test_id = xSemaphoreCreateMutex();
 		
 

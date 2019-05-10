@@ -68,6 +68,17 @@
 #define configQUEUE_REGISTRY_SIZE                8
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  1
 
+
+/***************       		软件定时器相关配置          **************/
+#define configUSE_TIMERS 												 1
+#if  (configUSE_TIMERS==1)
+	#define configTIMER_TASK_PRIORITY						  (configMAX_PRIORITIES-1)
+	#define configTIMER_QUEUE_LENGTH							5
+	#define configTIMER_TASK_STACK_DEPTH					(configMINIMAL_STACK_SIZE*2)
+#endif
+
+
+
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES                    0
 #define configMAX_CO_ROUTINE_PRIORITIES          ( 2 )
@@ -125,12 +136,12 @@ standard names. */
 
 /* USER CODE BEGIN Defines */ 
 
-#define configUSE_TRACE_FACILITY 			 1	    //get task inf
+#define configUSE_TRACE_FACILITY 			 1	        //get task inf
 #define INCLUDE_xTaskGetCurrentTaskHandle 	 1		//get currnt task handle enable
 
 extern void trace_TASK_IN(void);
 extern void trace_TASK_OUT(void);
-#define traceTASK_SWITCHED_IN()		trace_TASK_IN()
+#define traceTASK_SWITCHED_IN()		  trace_TASK_IN()
 #define traceTASK_SWITCHED_OUT()    trace_TASK_OUT()
 
 
