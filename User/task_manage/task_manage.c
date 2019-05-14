@@ -20,25 +20,11 @@ osThreadId tast_2_hd = NULL;
 osThreadId tast_3_hd = NULL;
 
 
-osSemaphoreId sem_test_id = NULL;
-osMutexId mute_test_id = NULL;
-osTimerId timer1_id = NULL;
-osTimerId timer2_id = NULL;
+EventGroupHandle_t evnt_hd = NULL;
 
-void soft_timer1_isr(TimerHandle_t Timer_hd)
-{
-
-	task_printf("soft_timer1_isr name:%s\n", pcTimerGetTimerName((TimerHandle_t)(Timer_hd)));
-}
-void soft_timer2_isr(void const *Timer_hd)
-{
-	(void )Timer_hd;
-	task_printf("soft_timer2_isr\n");
-}
-
-//osTimerDef(timer1, soft_timer1_isr);
-osTimerDef(timer2, soft_timer2_isr);
-
+#define TASK_1_EVENT	BIT(0)
+#define TASK_2_EVENT	BIT(1)
+#define ALL_EVENT			(TASK_1_EVENT | TASK_2_EVENT)
 
 void task_1_fun(void const *param)
 {
@@ -49,7 +35,7 @@ void task_1_fun(void const *param)
 	while(1)
 	{ 
 		task_printf("task_1_fun  running  start :%d  \n",++cnt);
-
+     xEventGroupSetBits(evnt_hd, TASK_1_EVENT);
 		osDelay(1000);
 	}
 }
@@ -61,7 +47,7 @@ void task_2_fun(void const *param)
 	while(1)
 	{
 		task_printf("task_2_fun  running  start  :%d  \n",++cnt);
-
+    xEventGroupSetBits(evnt_hd, TASK_2_EVENT);
 		task_printf("task_2_fun  running  end\n");
 		osDelay(1000);
 		
@@ -76,10 +62,20 @@ void task_3_fun(void const *param)
 	while(1)
 	{
 		task_printf("task_3_fun  running  start :%d  \n",++cnt);
+		if(evnt_hd){
+				xEventGroupWaitBits( evnt_hd,
+														ALL_EVENT, 
+														pdTRUE, 					// pdTRUE :clear when get event,  pdFALSE:
+														pdTRUE,						// pdTRUE :wait all events,       pdFALSE: wait one of the events
+														portMAX_DELAY);		
 		
-    task_printf("task_3_fun  running  end\n");
-		osDelay(1000);
-    		
+		}else{
+				;
+		
+		}
+
+    osDelay(10);
+    task_printf("task_3_fun  running  end\n");	
 	}
 }
 
@@ -98,20 +94,11 @@ void task_startup(void)
     tast_2_hd = osThreadCreate(osThread(task_2),NULL); 
     osThreadDef(task_3, task_3_fun, TASK_3_PRIO, 0, TASK_2_STACK_SIZE);
     tast_3_hd = osThreadCreate(osThread(task_3),NULL); 
-	  
-	  //timer1_id = osTimerCreate(osTimer(timer1), osTimerOnce,     (void *)1);
-	timer1_id =  xTimerCreate((const char *)"timer1",
-                      1000, 
-                      pdTRUE,
-                      (void *) 1,
-                      soft_timer1_isr);
-	  timer2_id = osTimerCreate(osTimer(timer2), osTimerPeriodic, (void *)2);
-		task_printf("osTimerCreate\n");
-	  xTimerStart( timer1_id, 3000);
-			task_printf("xTimerStart\n");
-
-		sem_test_id = xSemaphoreCreateBinary();
-		mute_test_id = xSemaphoreCreateMutex();
+	
+	  evnt_hd = xEventGroupCreate();
+		if(evnt_hd == NULL){
+			 task_printf("xEventGroupCreate		NULL\n",__func__);
+		}
 		
 
 }

@@ -3,8 +3,12 @@
 
 #include "stm32f4xx_hal.h"
 #include "SEGGER_RTT.h"
+
+
 #include "app_cfg.h"
 #include "typedf.h"
+#include "common.h"
+
 
 #endif
 
