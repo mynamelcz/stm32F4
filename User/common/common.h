@@ -7,7 +7,7 @@
 #define REV_BIT(x,b)  do{x ^=  BIT(b);}while(0)
 #define GET_BIT(x,b)  ((x>>b)&0x1)
 
-
+void print_code_version(void);
 
 
 

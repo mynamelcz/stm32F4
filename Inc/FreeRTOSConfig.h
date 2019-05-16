@@ -70,12 +70,29 @@
 
 
 /***************       		软件定时器相关配置          **************/
-#define configUSE_TIMERS 												 1
+#define configUSE_TIMERS 										1
 #if  (configUSE_TIMERS==1)
-	#define configTIMER_TASK_PRIORITY						  (configMAX_PRIORITIES-1)
+	#define configTIMER_TASK_PRIORITY						 (configMAX_PRIORITIES-1)
 	#define configTIMER_QUEUE_LENGTH							5
-	#define configTIMER_TASK_STACK_DEPTH					(configMINIMAL_STACK_SIZE*2)
+	#define configTIMER_TASK_STACK_DEPTH					 (configMINIMAL_STACK_SIZE*2)
 #endif
+/*==================================================================*/
+
+/***************       		低功耗模式相关配置         **************/
+#define configUSE_TICKLESS_IDLE 								0
+	
+#if (configUSE_TICKLESS_IDLE ==1)
+extern void pre_sleep_processing(u32 *expt_idletime);
+extern void post_sleep_processing(u32 *expt_idletime);
+#define configPRE_SLEEP_PROCESSING( x )						pre_sleep_processing(x)		//deal	before sleep
+#define configPOST_SLEEP_PROCESSING( x )					post_sleep_processing(x)
+#endif
+
+//
+
+/*==================================================================*/
+
+
 
 
 
@@ -137,12 +154,11 @@ standard names. */
 /* USER CODE BEGIN Defines */ 
 
 #define configUSE_TRACE_FACILITY 			 1	        //get task inf
-#define INCLUDE_xTaskGetCurrentTaskHandle 	 1		//get currnt task handle enable
-
+#define INCLUDE_xTaskGetCurrentTaskHandle 	 1			//get currnt task handle enable
 extern void trace_TASK_IN(void);
 extern void trace_TASK_OUT(void);
-#define traceTASK_SWITCHED_IN()		  trace_TASK_IN()
-#define traceTASK_SWITCHED_OUT()    trace_TASK_OUT()
+#define traceTASK_SWITCHED_IN()		  trace_TASK_IN()	
+#define traceTASK_SWITCHED_OUT()      trace_TASK_OUT()
 
 
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
