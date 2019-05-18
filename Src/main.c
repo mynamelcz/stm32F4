@@ -78,7 +78,10 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  main_printf(">>>>>>>>>>>> POWER ON <<<<<<<<<<<\n"); 
+  main_printf(">>>>>>>>>>>>>> Power ON <<<<<<<<<<<\n"); 
+#ifdef VECT_TAB_SRAM
+  main_printf(">>>>>>>>>>>> Running in SRAM <<<<<<<<<<<\n"); 
+#endif
 	HAL_Init();
 
   /* USER CODE BEGIN Init */
