@@ -20,6 +20,27 @@
 #endif
 
 
+
+////////////////////////////////////////////////////////
+#define DBUG_BSP_SPI
+
+
+
+#ifdef DBUG_BSP_SPI
+#define spi_printf		MY_RTT_printf
+#else
+#define spi_printf(...)
+#endif
+
+
+
+
+
+
+
+
+
+
 #endif
 
 
