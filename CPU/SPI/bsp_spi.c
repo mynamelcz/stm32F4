@@ -41,51 +41,7 @@ static void spi_gpio_init(SPI_HandleTypeDef *hspi)
 
 
 
-static uint8_t spix_read_byte(SPI_HandleTypeDef *hspi)
-{
-    uint16_t t_out = 1000;
-	uint8_t rd_dat = 0;
 
-    while(__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE) == RESET){
-		if(--t_out == 0){
-			spi_err_callback(__LINE__);
-			return 0;
-		}
-	}
-    hspi->Instance->DR = 0XFF;	
-	t_out = 1000;
-    while(__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE) == RESET){
-		if(--t_out == 0){
-			spi_err_callback(__LINE__);
-			return 0;
-		}
-	}
-    rd_dat = hspi->Instance->DR;
-	return rd_dat;
-}
-static uint8_t spix_send_byte(SPI_HandleTypeDef *hspi, uint8_t dat)
-{
-	uint8_t rd_dat = 0;
-	uint16_t t_out = 1000;
-    while(__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_TXE) == RESET){
-		if(--t_out == 0){
-			spi_err_callback(__LINE__);
-			return 0;
-		}
-	}
-    hspi->Instance->DR = dat;	
-	
-	t_out = 1000;
-    while(__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE) == RESET){
-		if(--t_out == 0){
-			spi_err_callback(__LINE__);
-			return 0;
-		}
-	}
-    rd_dat = hspi->Instance->DR;
-	
-	return 1;
-}
 
 
 
@@ -97,8 +53,8 @@ void spi1_init(void)
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
 	
-  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;    			//clk idle state 
-  hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;       				 //
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;    			//clk idle state 
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;       				 //
   hspi1.Init.NSS = SPI_NSS_SOFT;
   hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;   //clk prescaler
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
@@ -115,6 +71,33 @@ void spi1_init(void)
   
   __HAL_SPI_ENABLE(&hspi1);
 }
+static uint8_t spix_send_read_byte(SPI_HandleTypeDef *hspi, uint8_t dat)
+{
+    uint8_t s_dat = dat; 
+	uint8_t r_dat = 0; 
+    HAL_SPI_Transmit(hspi,&s_dat, 1, HAL_MAX_DELAY);
+	HAL_SPI_Receive(hspi, &r_dat, 1, HAL_MAX_DELAY);
+    return r_dat;
+}
+static uint8_t spix_read_byte(SPI_HandleTypeDef *hspi)
+{
+	uint8_t rd_dat = 0;
+	rd_dat = spix_send_read_byte(hspi, 0xff);
+	return rd_dat;
+}
+
+
+void spi1_send_buf(uint8_t *pData, uint16_t Size)
+{
+	HAL_SPI_Transmit(&hspi1, pData, Size, HAL_MAX_DELAY);
+}
+
+void spi1_read_buf(uint8_t *pData, uint16_t Size)
+{
+	HAL_SPI_Receive(&hspi1, pData, Size, HAL_MAX_DELAY);
+}
+
+
 
 uint8_t spi1_read_byte(void)
 {
@@ -122,8 +105,10 @@ uint8_t spi1_read_byte(void)
 	rd_dat	= spix_read_byte(&hspi1);
 	return rd_dat;
 }
-void spi1_send_byte(uint8_t dat)
+uint8_t spi1_send_read_byte(uint8_t dat)
 {
-	spix_send_byte(&hspi1, dat);
+	uint8_t rd_dat = 0;
+	rd_dat = spix_send_read_byte(&hspi1, dat);
+	return rd_dat;
 }
 

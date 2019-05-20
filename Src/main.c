@@ -24,6 +24,7 @@
 #include "fatfs.h"
 #include "includes.h"
 #include "task_manage.h"
+#include "led.h"
 
 #include "spi_flash.h"
 
@@ -93,10 +94,17 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
   gpio_clk_enable();
+   
+  LED_GPIO_Init();	
+  
+#ifdef VECT_TAB_SRAM
+  LED1_ON();
+  LED2_ON();
+#endif  
 
   spi_flash_init();
   flash_read_id();
-
+  flash_read_jedec();
 
 
   /* Start scheduler */

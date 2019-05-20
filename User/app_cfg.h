@@ -34,6 +34,11 @@
 
 
 
+#ifdef DBUG_BSP_UART
+#define uart_printf		MY_RTT_printf
+#else
+#define uart_printf(...)
+#endif
 
 
 

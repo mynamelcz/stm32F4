@@ -2,8 +2,28 @@
 #define __SPI_FLASH_H
 #include "includes.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void spi_flash_init(void);
 u16 flash_read_id(void);
+u32 flash_read_jedec(void);
 #endif
 
 
