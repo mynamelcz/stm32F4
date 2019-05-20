@@ -24,9 +24,11 @@
 #include "fatfs.h"
 #include "includes.h"
 #include "task_manage.h"
-#include "led.h"
 
+
+#include "led.h"
 #include "spi_flash.h"
+#include "bsp_uart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -74,26 +76,22 @@ void gpio_clk_enable(void);
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+  SystemClock_Config();  
+  gpio_clk_enable();
+	
+	
+  uart1_init();
+	
   main_printf(">>>>>>>>>>>>>> Power ON <<<<<<<<<<<\n"); 
 #ifdef VECT_TAB_SRAM
   main_printf(">>>>>>>>>>>> Running in SRAM <<<<<<<<<<<\n"); 
-#endif
-	HAL_Init();
+#endif	
+	
+	
 
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-  gpio_clk_enable();
    
   LED_GPIO_Init();	
   
@@ -103,8 +101,7 @@ int main(void)
 #endif  
 
   spi_flash_init();
-  flash_read_id();
-  flash_read_jedec();
+  spi_flash_test();
 
 
   /* Start scheduler */

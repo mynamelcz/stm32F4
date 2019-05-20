@@ -1,6 +1,7 @@
 #include "spi_flash.h"
 #include "bsp_spi.h"
 
+#define DUMMY_DATA	0xFF
 
 #define flash_read_buf		spi1_read_buf
 #define flash_write_buf		spi1_send_buf
@@ -30,6 +31,7 @@
 
 #define FLASH_READ_JEDEC_ID		0x9F 
 #define FLASH_READ_DEVICE_ID	0x90
+#define FLASH_READ_UNIQUE_ID	0x4B
 static void spi_cs_gpio_init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -47,9 +49,10 @@ void spi_flash_init(void)
 	spi_cs_ctr(0);
 }  
 
+
 u16 flash_read_id(void)
 {
-	u8 cmd_buf[4]={FLASH_READ_DEVICE_ID, 0, 0, 0};
+	u8 cmd_buf[4]={FLASH_READ_DEVICE_ID, DUMMY_DATA, DUMMY_DATA, DUMMY_DATA};
 	u16 dev_id = 0;	  
 	spi_cs_ctr(0);	
 	flash_write_buf(cmd_buf, 4);
@@ -58,7 +61,6 @@ u16 flash_read_id(void)
  	spi_printf("FLSH ID: 0x%x\n",dev_id);
 	return dev_id;
 }  
-
 u32 flash_read_jedec(void)
 {
 	u32 dev_id = 0;
@@ -69,9 +71,48 @@ u32 flash_read_jedec(void)
 	flash_read_buf(buf,3);
 	spi_cs_ctr(1);
     dev_id = (buf[0]<<16) + (buf[1]<<8) + buf[2];	
- 	spi_printf("FLSH ID: 0x%x\n",dev_id);
+ 	spi_printf("FLSH JEDEC: 0x%x\n",dev_id);
 	return dev_id;
 }
+void flash_read_unique_id(u8 *id_buf)
+{
+	u8 cmd_buf[5]={FLASH_READ_UNIQUE_ID,DUMMY_DATA, DUMMY_DATA,DUMMY_DATA,DUMMY_DATA};
+	spi_cs_ctr(0);
+	flash_write_buf(cmd_buf, 5);
+	flash_read_buf(id_buf,8);	
+	spi_cs_ctr(1);
+}
+
+
+
+
+
+
+
+
+void spi_flash_test(void)
+{
+	u8 unique_id[8];
+	flash_read_id();
+	flash_read_jedec();
+    flash_read_unique_id(unique_id);
+	
+	u8 i = 0;
+	for(;i<8;i++){
+		spi_printf("unique_id[%d]: 0x%x\n",i,unique_id[i]);
+	}
+}
+
+
+
+//u32 flash_write_buf(u8 *buf, u32 addr, u32 size)
+//{
+
+//}
+
+
+
+
 
 
 

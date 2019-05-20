@@ -22,8 +22,7 @@
 
 
 void spi_flash_init(void);
-u16 flash_read_id(void);
-u32 flash_read_jedec(void);
+void spi_flash_test(void);
 #endif
 
 
