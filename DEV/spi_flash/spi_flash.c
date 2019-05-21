@@ -3,8 +3,8 @@
 
 #define DUMMY_DATA	0xFF
 
-#define flash_read_buf		spi1_read_buf
-#define flash_write_buf		spi1_send_buf
+#define spi_read_buf		spi1_read_buf
+#define spi_write_buf		spi1_send_buf
 
 
 
@@ -13,12 +13,14 @@
 #define spi_cs_ctr(x)		(x)?HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_SET):HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_RESET)
 /*** FLASH ATTRIBUTE	****/
 #define	FLASH_PAGE_SIZE			256
+
 #define FLASH_SECTOR_SIZE		(4  * 1024)
 #define FLASH_BLOCK_SIZE		(64 * 1024)
 
 /***	 FLASH CMD		****/
 #define FLASH_WIRT_ENABLE		0x06 
-#define FLASH_WIRT_DISABLE		0x04 
+#define FLASH_WIRT_DISABLE		0x04
+#define FLASH_READ_DATA			0x03
 
 #define FLASH_PAGE_PROGRAM		0x02
 #define FLASH_SECTOR_ERASE		0x20
@@ -83,8 +85,8 @@ u16 flash_read_id(void)
 	u8 cmd_buf[4]={FLASH_READ_DEVICE_ID, DUMMY_DATA, DUMMY_DATA, DUMMY_DATA};
 	u16 dev_id = 0;	  
 	spi_cs_ctr(0);	
-	flash_write_buf(cmd_buf, 4);
-	flash_read_buf((u8 *)(&dev_id),2);
+	spi_write_buf(cmd_buf, 4);
+	spi_read_buf((u8 *)(&dev_id),2);
 	spi_cs_ctr(1);	
  	spi_printf("FLSH ID: 0x%x\n",dev_id);
 	return dev_id;
@@ -95,8 +97,8 @@ u32 flash_read_jedec(void)
 	u8 cmd_buf[1]={FLASH_READ_JEDEC_ID};
 	u8 buf[3];	  
 	spi_cs_ctr(0);	 
-	flash_write_buf(cmd_buf, 1);
-	flash_read_buf(buf,3);
+	spi_write_buf(cmd_buf, 1);
+	spi_read_buf(buf,3);
 	spi_cs_ctr(1);
     dev_id = (buf[0]<<16) + (buf[1]<<8) + buf[2];	
  	spi_printf("FLSH JEDEC: 0x%x\n",dev_id);
@@ -106,8 +108,8 @@ void flash_read_unique_id(u8 *id_buf)
 {
 	u8 cmd_buf[5]={FLASH_READ_UNIQUE_ID,DUMMY_DATA, DUMMY_DATA,DUMMY_DATA,DUMMY_DATA};
 	spi_cs_ctr(0);
-	flash_write_buf(cmd_buf, 5);
-	flash_read_buf(id_buf,8);	
+	spi_write_buf(cmd_buf, 5);
+	spi_read_buf(id_buf,8);	
 	spi_cs_ctr(1);
 }
 
@@ -116,7 +118,7 @@ void flash_write_enable(void)
 {
 	u8 cmd_buf[1]={FLASH_WIRT_ENABLE};
 	spi_cs_ctr(0);
-	flash_write_buf(cmd_buf, 1);
+	spi_write_buf(cmd_buf, 1);
 	spi_cs_ctr(1);
 }
 
@@ -127,20 +129,24 @@ u8 flash_read_status_register(void)
 	u8 status = 0;
 	u8 cmd_buf[1]={FLASH_READ_STATUS1};
 	spi_cs_ctr(0);
-	flash_write_buf(cmd_buf, 1);
-	flash_read_buf(&status,1);
+	spi_write_buf(cmd_buf, 1);
+	spi_read_buf(&status,1);
 	spi_cs_ctr(1);	
 	return status;
 }
+//void flash_wirte_status_register(void)
+//{
+//FLASH_WRITE_STATUS
+//}
 /******	 忙碌等待 	******/
 void flash_wait_write_end(void)
 {
 	u8 status = 0;
 	u8 cmd_buf[1]={FLASH_READ_STATUS1};
 	spi_cs_ctr(0);
-	flash_write_buf(cmd_buf, 1);
+	spi_write_buf(cmd_buf, 1);
     do{
-		flash_read_buf(&status,1);
+		spi_read_buf(&status,1);
 	}while(status & STATUS1_REG_BUSY_BIT);
 }
 /******	 扇区 擦除 	******/
@@ -157,7 +163,7 @@ void flash_sector_erase(u32 sector_addr)
 	cmd_buf[3] = (sector_addr>> 0) & 0xff;
 	flash_write_enable();
 	spi_cs_ctr(0);
-	flash_write_buf(cmd_buf, 4);
+	spi_write_buf(cmd_buf, 4);
 	spi_cs_ctr(1);
 	flash_wait_write_end();
 }
@@ -166,7 +172,7 @@ void flash_sector_erase(u32 sector_addr)
 /*2.应确保写入的地方在同一个页*/
 void flash_page_program(u8 *buf, u32 addr, u32 len)
 {
-	if((len + addr&(FLASH_SECTOR_SIZE-1)) > FLASH_PAGE_SIZE){		
+	if((len + addr&(FLASH_PAGE_SIZE-1)) > FLASH_PAGE_SIZE){		
 		spi_printf("FLASH WARNING: write too long or not in one page\n");
 	}
 	u8 cmd_buf[4];
@@ -176,35 +182,77 @@ void flash_page_program(u8 *buf, u32 addr, u32 len)
 	cmd_buf[3] = (addr>> 0) & 0xff;	
 	flash_write_enable();
 	spi_cs_ctr(0);
-	flash_write_buf(cmd_buf, 4);
-	flash_write_buf(buf, len);
+	spi_write_buf(cmd_buf, 4);
+	spi_write_buf(buf, len);
 	spi_cs_ctr(1);	
 	flash_wait_write_end();
 }
 
-//void flash_wirte_status_register(void)
-//{
-//FLASH_WRITE_STATUS
-//}
+/******	 写flash 	******/
+void flash_write_buf(u8 *buf, u32 addr, u32 len)
+{
+    u16 w_len = 0;
+	u16 page_offset = addr&(FLASH_PAGE_SIZE - 1);
+    u16 page_last_len = FLASH_PAGE_SIZE - page_offset; 
+
+    u16 first_page_len = len<page_last_len?len:page_last_len;
+    u16 last_page_len = (len - first_page_len)&(FLASH_PAGE_SIZE-1); 
+    u32 whole_page_num = (len -  first_page_len - last_page_len)/FLASH_PAGE_SIZE;
+    spi_printf("page_offset = %d\n",page_offset);
+	spi_printf("page_last_len = %d\n",page_last_len);
+	spi_printf("first_page_len = %d\n",first_page_len);
+	spi_printf("last_page_len = %d\n",last_page_len);
+	spi_printf("whole_page_num = %d\n",whole_page_num);
+    flash_page_program(buf, addr, first_page_len);
+    w_len += first_page_len;
+    while(whole_page_num){
+        flash_page_program(buf+w_len, addr+w_len, FLASH_PAGE_SIZE);
+        w_len += FLASH_PAGE_SIZE;
+		whole_page_num--;
+    }
+    flash_page_program(buf+w_len, addr+w_len, last_page_len);
+}
+/******	 读flash 	******/	
+void flash_read_buf(u8 *buf, u32 addr, u32 len)
+{
+	u8 cmd_buf[4];
+    cmd_buf[0]=  FLASH_READ_DATA;
+	cmd_buf[1] = (addr>>16) & 0xff;
+	cmd_buf[2] = (addr>> 8) & 0xff;
+	cmd_buf[3] = (addr>> 0) & 0xff;
+	spi_cs_ctr(0);
+	spi_write_buf(cmd_buf, 4);
+	spi_read_buf(buf,len);
+	spi_cs_ctr(1);	
+}
+	
 
 
 
 void spi_flash_test(void)
 {
 	u8 unique_id[8];
+	u8 read_buf[8];
 	flash_read_id();
 	flash_read_jedec();
     flash_read_unique_id(unique_id);
 	
 	u8 i = 0;
-	for(;i<8;i++){
+	for(i=0;i<8;i++){
 		spi_printf("unique_id[%d]: 0x%x\n",i,unique_id[i]);
+	}
+	
+	//flash_write_buf(unique_id, 0, 8);
+	flash_page_program(unique_id, 0, 8);
+	flash_read_buf(read_buf, 0, 8);
+	for(i=0;i<8;i++){
+		spi_printf("read_buf[%d]: 0x%x\n",i,read_buf[i]);
 	}
 }
 
 
 
-//u32 flash_write_buf(u8 *buf, u32 addr, u32 size)
+//u32 spi_write_buf(u8 *buf, u32 addr, u32 size)
 //{
 
 //}
