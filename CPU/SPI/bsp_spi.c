@@ -56,7 +56,7 @@ void spi1_init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;    			//clk idle state 
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;       				 //
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;   //clk prescaler
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;   //clk prescaler
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;			        //time out close
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -94,7 +94,9 @@ void spi1_send_buf(uint8_t *pData, uint16_t Size)
 
 void spi1_read_buf(uint8_t *pData, uint16_t Size)
 {
-	HAL_SPI_Receive(&hspi1, pData, Size, HAL_MAX_DELAY);
+	if(HAL_SPI_Receive(&hspi1, pData, Size, HAL_MAX_DELAY) != HAL_OK){
+		spi_printf("BSP SPI ERR spi1_read_buf!!!!\n");
+	}
 }
 
 

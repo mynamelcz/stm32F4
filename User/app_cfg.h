@@ -3,7 +3,9 @@
 #include "SEGGER_RTT.h"
 #include "stdio.h"
 
-#define DBUG_Printf 	printf	// MY_RTT_printf
+#define DBUG_Printf 	printf		// MY_RTT_printf
+#define DBUG_Put_hex 	my_printhex	
+
 
 #define DBUG_MAIN	
 #define DBUG_TASK_MANAGE
@@ -13,7 +15,6 @@
 #else
 #define main_printf(...)
 #endif
-
 
 
 #ifdef DBUG_TASK_MANAGE
@@ -28,11 +29,12 @@
 #define DBUG_BSP_SPI
 
 
-
 #ifdef DBUG_BSP_SPI
 #define spi_printf		DBUG_Printf
+#define spi_puthex		DBUG_Put_hex
 #else
 #define spi_printf(...)
+#define spi_puthex(...)	
 #endif
 
 
