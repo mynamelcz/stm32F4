@@ -16,7 +16,6 @@
 #define main_printf(...)
 #endif
 
-
 #ifdef DBUG_TASK_MANAGE
 #define task_printf		DBUG_Printf
 #else
@@ -26,10 +25,10 @@
 
 
 ////////////////////////////////////////////////////////
-#define DBUG_BSP_SPI
+#define __DBUG_BSP_SPI
 
 
-#ifdef DBUG_BSP_SPI
+#ifdef __DBUG_BSP_SPI
 #define spi_printf		DBUG_Printf
 #define spi_puthex		DBUG_Put_hex
 #else
@@ -39,9 +38,27 @@
 
 
 
+///////////////////////////////////////////////////////
+#define __DBUG_FATFS
+#define __DBUG_VFS
 
 
 
+#ifdef __DBUG_FATFS
+#define fs_printf		DBUG_Printf
+#define fs_puthex		DBUG_Put_hex
+#else
+#define fs_printf(...)
+#define fs_puthex(...)	
+#endif
+
+#ifdef __DBUG_VFS
+#define vfs_printf		DBUG_Printf
+#define vfs_puthex		DBUG_Put_hex
+#else
+#define vfs_printf(...)
+#define vfs_puthex(...)	
+#endif
 
 
 

@@ -21,7 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "fatfs.h"
+
 #include "includes.h"
 #include "task_manage.h"
 
@@ -29,6 +29,7 @@
 #include "led.h"
 #include "spi_flash.h"
 #include "bsp_uart.h"
+#include "vfile_sys.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -99,9 +100,9 @@ int main(void)
   LED1_ON();
   LED2_ON();
 #endif  
-
-  spi_flash_init();
-  spi_flash_test();
+  fs_test();
+  //spi_flash_init();
+  //spi_flash_test();
 
 
   /* Start scheduler */

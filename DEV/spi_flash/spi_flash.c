@@ -1,68 +1,9 @@
 #include "spi_flash.h"
 #include "bsp_spi.h"
+#include "diskio.h"
+#include "stm32f4xx_hal.h"
 
 #define DUMMY_DATA	0xFF
-
-#define spi_read_buf		spi1_read_buf
-#define spi_write_buf		spi1_send_buf
-#define spi_delay_us(x)		HAL_Delay(1)
-
-
-
-
-#define SPI_CS_PORT			GPIOB
-#define SPI_CS_PIN			GPIO_PIN_0
-#define spi_cs_ctr(x)		(x)?HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_SET):HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_RESET)
-/*** FLASH ATTRIBUTE	****/
-#define	FLASH_PAGE_SIZE			256
-
-#define FLASH_SECTOR_SIZE		(4  * 1024)
-#define FLASH_BLOCK_SIZE		(64 * 1024)
-
-/***	 FLASH CMD		****/
-#define FLASH_WIRT_ENABLE		0x06 
-#define FLASH_WIRT_DISABLE		0x04
-#define FLASH_READ_DATA			0x03
-#define FLASH_FAST_READ_DATA	0x0B
-
-#define FLASH_PAGE_PROGRAM		0x02
-#define FLASH_SECTOR_ERASE		0x20
-#define FLASH_BLOCK32_ERASE		0x52
-#define FLASH_BLOCK64_ERASE		0xD8
-#define FLASH_CHIP_ERASE		0x60	// 0x60 or 0xC7
-
-#define FLASH_POWER_DOWN		0xB9
-#define FLASH_POWER_ON			0xAB
-
-#define FLASH_READ_STATUS1		0x05 
-#define FLASH_READ_STATUS2		0x35 
-#define FLASH_READ_STATUS3		0x15 
-#define FLASH_WRITE_STATUS1		0x01 
-#define FLASH_WRITE_STATUS2		0x31
-#define FLASH_WRITE_STATUS3		0x11
-
-//#define W25X_ReadData			0x03 
-//#define W25X_FastReadData		0x0B 
-//#define W25X_FastReadDual		0x3B 
-//#define W25X_PageProgram		0x02 
-//#define W25X_BlockErase			0xD8 
-//#define W25X_SectorErase		0x20 
-//#define W25X_ChipErase			0xC7 
-//#define W25X_PowerDown			0xB9 
-//#define W25X_ReleasePowerDown	0xAB 
-//#define W25X_DeviceID			0xAB 
-//#define W25X_ManufactDeviceID	0x90 
-//#define W25X_JedecDeviceID		0x9F 
-
-#define FLASH_READ_JEDEC_ID		0x9F 
-#define FLASH_READ_DEVICE_ID	0x90
-#define FLASH_READ_UNIQUE_ID	0x4B
-
-
-
-#define STATUS1_REG_BUSY_BIT		BIT(0)		// RO	write busy
-#define STATUS1_REG_WEL_BIT			BIT(1)		// RO	write enable
-
 
 static void spi_cs_gpio_init(void)
 {
@@ -74,12 +15,7 @@ static void spi_cs_gpio_init(void)
     HAL_GPIO_Init(SPI_CS_PORT, &GPIO_InitStruct);
 }
 
-void spi_flash_init(void)
-{ 
-	spi1_init();
-    spi_cs_gpio_init();
-	spi_cs_ctr(0);
-}  
+
 
 
 /******	 读取 ID	******/
@@ -115,6 +51,7 @@ void flash_read_unique_id(u8 *id_buf)
 	spi_read_buf(id_buf,8);	
 	spi_cs_ctr(1);
 }
+
 
 /******	 写使能 	******/
 void flash_write_enable(void)
@@ -230,7 +167,7 @@ void flash_chip_erase(void)
 /******	 页 写入 	******/
 /*1.应确保写入的地方已经被擦除*/
 /*2.应确保写入的地方在同一个页*/
-void flash_page_program(u8 *buf, u32 addr, u32 len)
+void flash_page_program(const u8 *buf, u32 addr, u32 len)
 {
 	if((len + addr&(FLASH_PAGE_SIZE-1)) > FLASH_PAGE_SIZE){		
 		spi_printf("FLASH WARNING: write too long or not in one page\n");
@@ -249,7 +186,7 @@ void flash_page_program(u8 *buf, u32 addr, u32 len)
 }
 
 /******	 写flash 	******/
-void flash_write_buf(u8 *buf, u32 addr, u32 len)
+void flash_write_buf(const u8 *buf, u32 addr, u32 len)
 {
     u16 w_len = 0;
 	u16 page_offset = addr&(FLASH_PAGE_SIZE - 1);
@@ -298,16 +235,77 @@ void flash_fast_read_buf(u8 *buf, u32 addr, u32 len)
 	spi_read_buf(buf,len);
 	spi_cs_ctr(1);	
 }
+void flash_erase_sectors(u32 start_sec, u32 sct_num)
+{
+	spi_printf("start time = %d\n",HAL_GetTick());
+	while(sct_num--){		
+		spi_printf("erase_sec = %d\n",start_sec);
+        flash_sector_erase(start_sec<<FLASH_SCT_POWER);
+        start_sec++;
 
+    }
+	spi_printf("end time = %d\n",HAL_GetTick());
+}
 
+u32 flash_get_sizeKB(void)
+{
+    u32 flash_size = 0;
+    const u32 flash_id[] = {0xEF4015,   //2M    W25Q16
+							0xEF4016,   //4M    W25Q32
+							0xEF4017,   //8M    W25Q64
+							0xEF4018,   //16M   W25Q128
+                            };
+	for(u8 i=0; i< sizeof(flash_id)/sizeof(flash_id[0]); i++){
+        if(flash_read_jedec() == flash_id[i]){
+            flash_size = (1<<(i+1))<<10;
+            return flash_size;
+        }    
+	}
+	return 0;
+}
+void flash_io_control(u8 cmd, void *buff)
+{
+    switch(cmd){
+/* Generic command (Used by FatFs) */
+        case CTRL_SYNC:
+            break;
+        case GET_SECTOR_COUNT:
+            *((u32 *)buff) = (flash_get_sizeKB()<<10)/FLASH_SECTOR_SIZE;
+            break;
+        case GET_SECTOR_SIZE:
+            *((u32 *)buff) = FLASH_SECTOR_SIZE;
+            break;
+        case GET_BLOCK_SIZE:
+            *((u32 *)buff) = FLASH_BLOCK_SIZE;
+            break;
+        case CTRL_TRIM:
+            break;
+/* Generic command (Not used by FatFs) */
+        case CTRL_POWER:
+            break;
+        case CTRL_LOCK:
+            break;
+        case CTRL_EJECT:
+            break;
+        case CTRL_FORMAT:
+            break;
+		default:
+			break;
+
+    }
+} 
+void spi_flash_init(void)
+{ 
+	spi1_init();
+    spi_cs_gpio_init();
+	spi_cs_ctr(0);
+	flash_power_up();
+}  
 void spi_flash_test(void)
 {
 	u8 unique_id[8];
-	u8 read_buf[8]={0};
-
-	
-	flash_power_up();
-	
+    u32 flash_size_kb = 0;
+	u32 flash_sec_cnt = 0;
 	flash_read_id();
 	flash_read_jedec();
     flash_read_unique_id(unique_id);
@@ -316,7 +314,10 @@ void spi_flash_test(void)
 	for(i=0;i<8;i++){
 		spi_printf("unique_id[%d]: 0x%x\n",i,unique_id[i]);
 	}
-	
+	flash_size_kb = flash_get_sizeKB();
+	spi_printf("flash_size_kb = 0x%x\n",flash_size_kb);
+	flash_sec_cnt = (flash_get_sizeKB()<<10)/FLASH_SECTOR_SIZE;
+	spi_printf("flash_sec_cnt = %d\n",flash_sec_cnt);
 //	spi_printf("HAL_GetTick = %d\n",HAL_GetTick());
 //	flash_chip_erase();
 //	spi_printf("HAL_GetTick = %d\n",HAL_GetTick());	
@@ -327,30 +328,21 @@ void spi_flash_test(void)
 //	spi_printf("status_reg: 0x%x\n",status_reg);
 //	HAL_Delay(500);
 //	flash_wait_write_end();
-	flash_write_buf(unique_id, 0, 8);
-	flash_fast_read_buf(read_buf, 0, 8);	
-	for(i=0;i<8;i++){
-		spi_printf("read_buf[%d]: 0x%x\n",i,read_buf[i]);
-	}
-	spi_puthex((const char *)read_buf, 8);
+//	flash_write_buf(unique_id, 0, 8);
+//	flash_fast_read_buf(read_buf, 0, 8);	
+//	for(i=0;i<8;i++){
+//		spi_printf("read_buf[%d]: 0x%x\n",i,read_buf[i]);
+//	}
+//	spi_puthex((const char *)read_buf, 8);
+//	
+//	flash_erase_sectors(0,10);
 //	flash_sector_erase(FLASH_SECTOR_SIZE * 1-1);
 //	flash_read_buf(read_buf, 0, 8);	
 //	for(i=0;i<8;i++){
 //		spi_printf("read_buf[%d]: 0x%x\n",i,read_buf[i]);
 //	}
-	
-
-
-
-
 }
 
-
-
-//u32 spi_write_buf(u8 *buf, u32 addr, u32 size)
-//{
-
-//}
 
 
 

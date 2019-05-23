@@ -3505,7 +3505,6 @@ FRESULT f_mount (
 	FRESULT res;
 	const TCHAR *rp = path;
 
-
 	/* Get logical drive number */
 	vol = get_ldnumber(&rp);
 	if (vol < 0) return FR_INVALID_DRIVE;

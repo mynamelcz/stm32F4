@@ -3,12 +3,12 @@
 #include "includes.h"
 
 void spi1_init(void);
-void spi1_send_buf(uint8_t *pData, uint16_t Size);
-void spi1_read_buf(uint8_t *pData, uint16_t Size);
+void spi1_send_buf(const u8 *pData, u16 Size);
+void spi1_read_buf(u8 *pData, u16 Size);
 
 
-uint8_t spi1_read_byte(void);
-uint8_t spi1_send_read_byte(uint8_t dat);
+u8 spi1_read_byte(void);
+u8 spi1_send_read_byte(u8 dat);
 #endif
 
 

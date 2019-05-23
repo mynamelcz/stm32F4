@@ -7,8 +7,13 @@
 
 #ifdef __cplusplus
 extern "C" {
+
 #endif
 
+
+#include "ff.h"			/* Obtains integer types */
+
+ 
 /* Status of Disk Functions */
 typedef BYTE	DSTATUS;
 
@@ -22,6 +27,8 @@ typedef enum {
 } DRESULT;
 
 
+
+
 /*---------------------------------------*/
 /* Prototypes for disk control functions */
 
@@ -31,10 +38,9 @@ DSTATUS disk_status (BYTE pdrv);
 DRESULT disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
 DRESULT disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
 DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
-
+DWORD get_fattime (void);
 
 /* Disk Status Bits (DSTATUS) */
-
 #define STA_NOINIT		0x01	/* Drive not initialized */
 #define STA_NODISK		0x02	/* No medium in the drive */
 #define STA_PROTECT		0x04	/* Write protected */

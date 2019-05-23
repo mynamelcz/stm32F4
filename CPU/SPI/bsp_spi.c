@@ -1,5 +1,5 @@
 #include "bsp_spi.h"
-
+#include "stm32f4xx_hal.h"
 
 
 
@@ -87,9 +87,9 @@ static uint8_t spix_read_byte(SPI_HandleTypeDef *hspi)
 }
 
 
-void spi1_send_buf(uint8_t *pData, uint16_t Size)
+void spi1_send_buf(const uint8_t *pData, uint16_t Size)
 {
-	HAL_SPI_Transmit(&hspi1, pData, Size, HAL_MAX_DELAY);
+	HAL_SPI_Transmit(&hspi1, (uint8_t *)pData, Size, HAL_MAX_DELAY);
 }
 
 void spi1_read_buf(uint8_t *pData, uint16_t Size)

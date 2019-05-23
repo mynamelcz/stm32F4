@@ -411,6 +411,11 @@
               <FileType>1</FileType>
               <FilePath>..\Lib\my_print\my_print.c</FilePath>
             </File>
+            <File>
+              <FileName>vfile_sys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Lib\vfs\vfile_sys.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -476,16 +481,6 @@
         <Group>
           <GroupName>Application/User</GroupName>
           <Files>
-            <File>
-              <FileName>user_diskio.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Src/user_diskio.c</FilePath>
-            </File>
-            <File>
-              <FileName>fatfs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Src/fatfs.c</FilePath>
-            </File>
             <File>
               <FileName>freertos.c</FileName>
               <FileType>1</FileType>
@@ -661,11 +656,6 @@
         <Group>
           <GroupName>FATFS</GroupName>
           <Files>
-            <File>
-              <FileName>cc936.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Lib\FATFS\cc936.c</FilePath>
-            </File>
             <File>
               <FileName>diskio.c</FileName>
               <FileType>1</FileType>
@@ -1025,7 +1015,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,VECT_TAB_SRAM</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FatFs/src;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Lib\RTT;..\User;..\User\task_manage;..\User\cpu_usage;..\User\common;..\User\low_power;..\CPU\SPI;..\DEV\LED;..\DEV\spi_flash;..\CPU\UART;..\Lib\my_print;..\Lib\FATFS</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Lib\RTT;..\User;..\User\task_manage;..\User\cpu_usage;..\User\common;..\User\low_power;..\CPU\SPI;..\DEV\LED;..\DEV\spi_flash;..\CPU\UART;..\Lib\my_print;..\Lib\FATFS;..\Lib\vfs</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1099,6 +1089,11 @@
               <FileType>1</FileType>
               <FilePath>..\Lib\my_print\my_print.c</FilePath>
             </File>
+            <File>
+              <FileName>vfile_sys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Lib\vfs\vfile_sys.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1164,16 +1159,6 @@
         <Group>
           <GroupName>Application/User</GroupName>
           <Files>
-            <File>
-              <FileName>user_diskio.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Src/user_diskio.c</FilePath>
-            </File>
-            <File>
-              <FileName>fatfs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Src/fatfs.c</FilePath>
-            </File>
             <File>
               <FileName>freertos.c</FileName>
               <FileType>1</FileType>
@@ -1349,11 +1334,6 @@
         <Group>
           <GroupName>FATFS</GroupName>
           <Files>
-            <File>
-              <FileName>cc936.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Lib\FATFS\cc936.c</FilePath>
-            </File>
             <File>
               <FileName>diskio.c</FileName>
               <FileType>1</FileType>
