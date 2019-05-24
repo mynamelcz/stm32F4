@@ -4,7 +4,7 @@
 
 #include "stdio.h"
 
-//#include "linux_list.h"
+#include "linux_list.h"
 //#include "linux_llist.h"
 
 #include "app_cfg.h"

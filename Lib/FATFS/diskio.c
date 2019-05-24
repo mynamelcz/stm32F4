@@ -14,11 +14,7 @@
 
 
 
-/* Definitions of physical drive number for each drive */
-#define DEV_FLASH	0
-#define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
-#define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
-#define DEV_RAM		3	/* Example: Map Ramdisk to physical drive 0 */
+
 
 
 /*-----------------------------------------------------------------------*/
