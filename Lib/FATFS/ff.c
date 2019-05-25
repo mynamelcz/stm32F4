@@ -3268,6 +3268,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	/* Find an FAT partition on the drive. Supports only generic partitioning rules, FDISK (MBR) and SFD (w/o partition). */
 	bsect = 0;
 	fmt = check_fs(fs, bsect);			/* Load sector 0 and check if it is an FAT-VBR as SFD */
+	fs_printf("check_fs fmt: %d\n",fmt);
 	if (fmt == 2 || (fmt < 2 && LD2PT(vol) != 0)) {	/* Not an FAT-VBR or forced partition number */
 		for (i = 0; i < 4; i++) {		/* Get partition offset */
 			pt = fs->win + (MBR_Table + i * SZ_PTE);
@@ -3504,9 +3505,11 @@ FRESULT f_mount (
 	int vol;
 	FRESULT res;
 	const TCHAR *rp = path;
-
+    fs_printf("FUN: %s\n",__func__);
+    fs_printf("path: %s\n", path);	
 	/* Get logical drive number */
 	vol = get_ldnumber(&rp);
+    fs_printf("vol: %d\n",vol);
 	if (vol < 0) return FR_INVALID_DRIVE;
 	cfs = FatFs[vol];					/* Pointer to fs object */
 

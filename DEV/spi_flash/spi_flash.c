@@ -3,6 +3,8 @@
 #include "diskio.h"
 #include "stm32f4xx_hal.h"
 
+
+
 #define DUMMY_DATA	0xFF
 
 static void spi_cs_gpio_init(void)
@@ -249,6 +251,7 @@ void flash_erase_sectors(u32 start_sec, u32 sct_num)
 
 u32 flash_get_sizeKB(void)
 {
+	spi_printf("FUN:%s\n",__func__);
     u32 flash_size = 0;
     const u32 flash_id[] = {0xEF4015,   //2M    W25Q16
 							0xEF4016,   //4M    W25Q32
@@ -263,20 +266,25 @@ u32 flash_get_sizeKB(void)
 	}
 	return 0;
 }
-void flash_io_control(u8 cmd, void *buff)
+bool flash_io_control(u8 cmd, void *buff)
 {
+    u8 res = false;
     switch(cmd){
 /* Generic command (Used by FatFs) */
-        case CTRL_SYNC:
+        case CTRL_SYNC:			//make sure write end
+			res = true;			//default ok;  因为写入时已经有等待写入完成，所以这里默认ok
             break;
         case GET_SECTOR_COUNT:
-            *((u32 *)buff) = (flash_get_sizeKB()<<10)/FLASH_SECTOR_SIZE;
+            *((u32 *)buff) = (flash_get_sizeKB()<<10)/FLASH_SECTOR_SIZE - FLASH_REV_SEC_NUM;
+            res = true;
             break;
         case GET_SECTOR_SIZE:
             *((u32 *)buff) = FLASH_SECTOR_SIZE;
+            res = true;
             break;
         case GET_BLOCK_SIZE:
             *((u32 *)buff) = FLASH_BLOCK_SIZE;
+            res = true;
             break;
         case CTRL_TRIM:
             break;
@@ -293,9 +301,11 @@ void flash_io_control(u8 cmd, void *buff)
 			break;
 
     }
+    return res;
 } 
 void spi_flash_init(void)
 { 
+	spi_printf("FUN:%s\n",__func__);
 	spi1_init();
     spi_cs_gpio_init();
 	spi_cs_ctr(0);

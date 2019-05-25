@@ -28,7 +28,7 @@ DSTATUS disk_status (
 	DSTATUS stat = STA_NOINIT;
 	switch (pdrv) {
 	case DEV_FLASH:
-		if(FLASH_JEDEC_ID == flash_read_jedec()){
+		if(flash_get_sizeKB()){
 			stat &= ~STA_NOINIT;
 		}
 		return stat;
@@ -84,7 +84,7 @@ DRESULT disk_read (
 	case DEV_FLASH:
 		 sector += FLASH_REV_SEC_NUM;
 		 flash_read_buf(buff, sector << FLASH_SCT_POWER, count << FLASH_SCT_POWER);
-	     res = RES_OK;
+	     res = RES_OK;  //default  ok
 		return res;
 	case DEV_RAM :
 		return res;
@@ -111,14 +111,13 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	DRESULT res;
-
+	DRESULT res = RES_ERROR;
 	switch (pdrv) {
 	case DEV_FLASH:
 		 sector += FLASH_REV_SEC_NUM;  
          flash_erase_sectors(sector, count); 
 	     flash_write_buf(buff, sector << FLASH_SCT_POWER, count << FLASH_SCT_POWER);
-	     res = RES_OK;
+	     res = RES_OK;  //default ok
 		return res;		
 	case DEV_RAM :
 		return res;
@@ -143,11 +142,12 @@ DRESULT disk_ioctl (
 	void *buff		/* Buffer to send/receive control data */
 )
 {
-	DRESULT res;
+	DRESULT res = RES_PARERR;
 	switch (pdrv) {
     case DEV_FLASH:
-        flash_io_control(cmd, buff);
-        res = RES_OK;
+        if(flash_io_control(cmd, buff)){
+            res = RES_OK;
+        }
         return res;
 	case DEV_RAM :
 		return res;

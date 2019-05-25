@@ -65,7 +65,7 @@ u32 flash_read_jedec(void);
 void flash_read_buf(u8 *buf, u32 addr, u32 len);
 void flash_write_buf(const u8 *buf, u32 addr, u32 len);
 void flash_erase_sectors(u32 start_sec, u32 sct_num);
-void flash_io_control(u8 cmd, void *buff);
+bool flash_io_control(u8 cmd, void *buff);
 
 
 void spi_flash_test(void);
