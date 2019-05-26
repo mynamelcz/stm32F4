@@ -20,9 +20,9 @@ void fs_test(void)
 {
 	
     u32 res = 0;
-	u32 w_len = 0;
-	u32 r_len = 0;
-	u8 r_buf[32];
+//	u32 w_len = 0;
+//	u32 r_len = 0;
+//	u8 r_buf[32];
     res = f_mount(&flash_fs, "0:", 1);
 	if(res != FR_OK){
 		vfs_printf("VFS ERR	| f_mount err: %d\n",res);
@@ -86,7 +86,7 @@ u32 scan_files (char* path)
     static FILINFO fno;
     res = f_opendir(&dir, path);                       /* Open the directory */
     if (res == FR_OK) {
-        for (;;) {
+        for (;;) { 
             res = f_readdir(&dir, &fno);                   /* Read a directory item */
             if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
             if (fno.fattrib & AM_DIR) {                    /* It is a directory */
