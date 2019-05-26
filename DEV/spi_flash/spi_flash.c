@@ -313,21 +313,21 @@ void spi_flash_init(void)
 }  
 void spi_flash_test(void)
 {
-	u8 unique_id[8];
-    u32 flash_size_kb = 0;
-	u32 flash_sec_cnt = 0;
-	flash_read_id();
-	flash_read_jedec();
-    flash_read_unique_id(unique_id);
-	
-	u8 i = 0;
-	for(i=0;i<8;i++){
-		spi_printf("unique_id[%d]: 0x%x\n",i,unique_id[i]);
-	}
-	flash_size_kb = flash_get_sizeKB();
-	spi_printf("flash_size_kb = 0x%x\n",flash_size_kb);
-	flash_sec_cnt = (flash_get_sizeKB()<<10)/FLASH_SECTOR_SIZE;
-	spi_printf("flash_sec_cnt = %d\n",flash_sec_cnt);
+//	u8 unique_id[8];
+//    u32 flash_size_kb = 0;
+//	u32 flash_sec_cnt = 0;
+//	flash_read_id();
+//	flash_read_jedec();
+//    flash_read_unique_id(unique_id);
+//	
+//	u8 i = 0;
+//	for(i=0;i<8;i++){
+//		spi_printf("unique_id[%d]: 0x%x\n",i,unique_id[i]);
+//	}
+//	flash_size_kb = flash_get_sizeKB();
+//	spi_printf("flash_size_kb = 0x%x\n",flash_size_kb);
+//	flash_sec_cnt = (flash_get_sizeKB()<<10)/FLASH_SECTOR_SIZE;
+//	spi_printf("flash_sec_cnt = %d\n",flash_sec_cnt);
 //	spi_printf("HAL_GetTick = %d\n",HAL_GetTick());
 //	flash_chip_erase();
 //	spi_printf("HAL_GetTick = %d\n",HAL_GetTick());	

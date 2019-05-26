@@ -160,17 +160,19 @@ DRESULT disk_ioctl (
 	return RES_PARERR;
 }
 
-__weak DWORD get_fattime (void)
+DWORD get_fattime (void)
 {
-   DWORD time = 0;
-    
-   time = ((DWORD)((2019 - 1980)<< 25)) |      //year
-          ((DWORD)( 1           << 21)) |      //month
-          ((DWORD)( 1           << 16)) |      //day
-          ((DWORD)( 1           << 11)) |      //hour
-          ((DWORD)( 1           <<  5)) |      //min
-          ((DWORD)( 1           >>  1));       //0.5 second
-  return time;
+   DWORD *time;
+	__time_tag t_tag;
+	t_tag.year = 2019 - 1980;
+	t_tag.mount = 1;
+	t_tag.day = 21;
+	t_tag.hour = 4;
+	t_tag.min = 30;
+	t_tag.sec = 10;
+	time = (u32 *)(&t_tag);
+    fs_printf("FUN:get_fattime :0x%x\n",*time);
+	return (*time);
 }
 
 

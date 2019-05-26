@@ -25,8 +25,7 @@
 
 
 ////////////////////////////////////////////////////////
-#define __DBUG_BSP_SPI
-
+//#define __DBUG_BSP_SPI
 
 #ifdef __DBUG_BSP_SPI
 #define spi_printf		DBUG_Printf
