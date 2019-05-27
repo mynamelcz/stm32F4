@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "stm32f4xx_ll.h"
 #include "cmsis_os.h"
 
 #include "includes.h"
@@ -116,7 +117,14 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+#ifdef VECT_TAB_SRAM
+	  LED1_ON();
+      LED2_ON();
+	  HAL_Delay(200);
+	  LED1_OFF();
+	  LED2_OFF();
+	  HAL_Delay(200);
+#endif
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

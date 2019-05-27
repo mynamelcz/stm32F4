@@ -38,14 +38,6 @@ static void spi_gpio_init(SPI_HandleTypeDef *hspi)
 
 }
 
-
-
-
-
-
-
-
-
 void spi1_init(void)
 {
   hspi1.Instance = SPI1;
@@ -61,8 +53,6 @@ void spi1_init(void)
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;			        //time out close
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi1.Init.CRCPolynomial = 7;
-	
-	
   spi_gpio_init(&hspi1);
   if (HAL_SPI_Init(&hspi1) != HAL_OK)
   {
@@ -86,7 +76,6 @@ static uint8_t spix_read_byte(SPI_HandleTypeDef *hspi)
 	return rd_dat;
 }
 
-
 void spi1_send_buf(const uint8_t *pData, uint16_t Size)
 {
 	HAL_SPI_Transmit(&hspi1, (uint8_t *)pData, Size, HAL_MAX_DELAY);
@@ -98,8 +87,6 @@ void spi1_read_buf(uint8_t *pData, uint16_t Size)
 		spi_printf("BSP SPI ERR spi1_read_buf!!!!\n");
 	}
 }
-
-
 
 uint8_t spi1_read_byte(void)
 {

@@ -1,7 +1,7 @@
 #include "task_manage.h"
 #include "cmsis_os.h"
 #include "cpu_usage.h"
-#include "led.h"
+
 
 #define  TASK_1_PRIO        osPriorityNormal 
 #define  TASK_1_STACK_SIZE  128
@@ -29,11 +29,7 @@ void task_1_fun(void const *param)
     
 	while(1)
 	{ 
-		LED1_ON();
-		task_printf("1111111  running  start :%d  \n",++cnt);
-        osDelay(1000);
-		LED1_OFF();
-		task_printf("1111111  running  end \n");
+
 		osDelay(1000);
 	}
 }
@@ -45,11 +41,7 @@ void task_2_fun(void const *param)
 
 	while(1)
 	{
-		task_printf("2222222  running  start  :%d  \n",++cnt);
-		LED2_ON();
-        osDelay(500);
-		LED2_OFF();
-		task_printf("2222222  running  end\n");
+
 		osDelay(500);
 		
 	}
@@ -77,7 +69,7 @@ void task_startup(void)
 {
     task_printf(">>>>   FUN:%s <<<<\n",__func__);
 		
-     LED_GPIO_Init();
+
 	
     osThreadDef(task_1, task_1_fun, TASK_1_PRIO, 0, TASK_1_STACK_SIZE);
     tast_1_hd = osThreadCreate(osThread(task_1),(void *)1); 

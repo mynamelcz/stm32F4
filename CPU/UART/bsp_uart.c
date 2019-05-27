@@ -1,5 +1,6 @@
 #include "bsp_uart.h"
-
+#include "stm32f4xx_hal.h"
+#include "stm32f4xx_ll.h"
 
 
 UART_HandleTypeDef huart1;
