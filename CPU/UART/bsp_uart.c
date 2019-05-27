@@ -1,61 +1,66 @@
 #include "bsp_uart.h"
-#include "stm32f4xx_hal.h"
 #include "stm32f4xx_ll.h"
-
-
-UART_HandleTypeDef huart1;
 
 void uart_err_callback(u16 line)
 {
-
 	while(1);
 }
 
-
-
-void uart_gpio_init(UART_HandleTypeDef* huart)
+void uart_gpio_init(USART_TypeDef *Instance)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(huart->Instance==USART1)
-  {
+	LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+	if(Instance == USART1){
+	    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOH);
+		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
+		
+		GPIO_InitStruct.Pin = LL_GPIO_PIN_9|LL_GPIO_PIN_10;
+		GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+		GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+		GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+		GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
+		GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
+		LL_GPIO_Init(GPIOA, &GPIO_InitStruct);	
+	}
+	if(Instance == USART2){
+		;
+	}
+	
 
-    __HAL_RCC_USART1_CLK_ENABLE();
-    /**USART1 GPIO Configuration    
-    PA9     ------> USART1_TX
-    PA10     ------> USART1_RX 
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_10;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  }
 
 }
+
+void uart_reg_init(USART_TypeDef *Instance)
+{
+	LL_USART_InitTypeDef USART_InitStruct = {0};
+	if(Instance == USART1){
+		
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+		
+		USART_InitStruct.BaudRate = 115200;
+		USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
+		USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
+		USART_InitStruct.Parity = LL_USART_PARITY_NONE;
+		USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
+		USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
+		USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
+		LL_USART_Init(USART1, &USART_InitStruct);
+		LL_USART_ConfigAsyncMode(USART1);
+		LL_USART_Enable(USART1);	
+	}
+}
+
+
 
 
 void uart1_init(void)
 {
 
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
 	
-  uart_gpio_init(&huart1);
-  if (HAL_UART_Init(&huart1) != HAL_OK)
-  {
-		uart_err_callback(__LINE__);
-  }
+	uart_gpio_init(USART1);
+	uart_reg_init(USART1);
+
 
 }
-
-
 
 
 

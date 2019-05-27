@@ -25,7 +25,7 @@ void task_1_fun(void const *param)
 {
 	(void)param;
 
-	static u32 cnt = 0;
+
     
 	while(1)
 	{ 
@@ -37,7 +37,7 @@ void task_1_fun(void const *param)
 void task_2_fun(void const *param)
 {
 	(void)(param);
-	static u32 cnt = 0;
+
 
 	while(1)
 	{

@@ -27,9 +27,12 @@
 #include "task_manage.h"
 
 
+#include "bsp_uart.h"
+#include "bsp_sys.h"
+
 #include "led.h"
 #include "spi_flash.h"
-#include "bsp_uart.h"
+
 #include "vfile_sys.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -80,11 +83,12 @@ int main(void)
 {
 
 
-  HAL_Init();
-  SystemClock_Config();  
+    HAL_Init();
+    SystemClock_Config();  
+
+  
+ // sys_clk_cfg();
   gpio_clk_enable();
-	
-	
   uart1_init();
 	
   main_printf(">>>>>>>>>>>>>> Power ON <<<<<<<<<<<\n"); 
@@ -101,14 +105,14 @@ int main(void)
   LED1_ON();
   LED2_ON();
 #endif  
-  fs_test();
-  //spi_flash_init();
-  //spi_flash_test();
+//  fs_test();
+   spi_flash_init();
+   spi_flash_test();
 
 
   /* Start scheduler */
- // task_startup();
- // osKernelStart();
+//   task_startup();
+//   osKernelStart();
   
   /* We should never get here as control is now taken by the scheduler */
 

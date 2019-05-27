@@ -316,9 +316,9 @@ void spi_flash_test(void)
 //	u8 unique_id[8];
 //    u32 flash_size_kb = 0;
 //	u32 flash_sec_cnt = 0;
-//	flash_read_id();
-//	flash_read_jedec();
-//    flash_read_unique_id(unique_id);
+	flash_read_id();
+	flash_read_jedec();
+//  flash_read_unique_id(unique_id);
 //	
 //	u8 i = 0;
 //	for(i=0;i<8;i++){
