@@ -24,9 +24,6 @@ void uart_gpio_init(USART_TypeDef *Instance)
 	if(Instance == USART2){
 		;
 	}
-	
-
-
 }
 
 void uart_reg_init(USART_TypeDef *Instance)
@@ -49,17 +46,54 @@ void uart_reg_init(USART_TypeDef *Instance)
 	}
 }
 
-
-
-
-void uart1_init(void)
+u8 tx_buf[10]={"sadasd"};
+void uart_dma_init(void)
 {
 
+//	LL_DMA_InitTypeDef DMA_InitStruct = {0};
+//	
+//	DMA_InitStruct.Channel = LL_DMA_CHANNEL_4;
+//	DMA_InitStruct.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+//	
+//	DMA_InitStruct.MemoryOrM2MDstAddress = (u32)tx_buf;
+//	
+//	DMA_InitStruct.MemoryOrM2MDstDataSize = 10;
+//	DMA_InitStruct.PeriphOrM2MSrcAddress = 
 	
+	
+	
+	
+//  NVIC_SetPriority(DMA2_Stream7_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 0));
+//  NVIC_EnableIRQ(DMA2_Stream7_IRQn);
+// /* USART1_TX Init */
+//  LL_DMA_SetChannelSelection(DMA2, LL_DMA_STREAM_7, LL_DMA_CHANNEL_4);
+
+//  LL_DMA_SetDataTransferDirection(DMA2, LL_DMA_STREAM_7, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
+
+//  LL_DMA_SetStreamPriorityLevel(DMA2, LL_DMA_STREAM_7, LL_DMA_PRIORITY_LOW);
+
+//  LL_DMA_SetMode(DMA2, LL_DMA_STREAM_7, LL_DMA_MODE_NORMAL);
+
+//  LL_DMA_SetPeriphIncMode(DMA2, LL_DMA_STREAM_7, LL_DMA_PERIPH_NOINCREMENT);
+
+//  LL_DMA_SetMemoryIncMode(DMA2, LL_DMA_STREAM_7, LL_DMA_MEMORY_INCREMENT);
+
+//  LL_DMA_SetPeriphSize(DMA2, LL_DMA_STREAM_7, LL_DMA_PDATAALIGN_BYTE);
+
+//  LL_DMA_SetMemorySize(DMA2, LL_DMA_STREAM_7, LL_DMA_MDATAALIGN_BYTE);
+
+//  LL_DMA_DisableFifoMode(DMA2, LL_DMA_STREAM_7);
+
+}
+
+
+
+
+	
+void uart1_init(void)
+{
 	uart_gpio_init(USART1);
 	uart_reg_init(USART1);
-
-
 }
 
 

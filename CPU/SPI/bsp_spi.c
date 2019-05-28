@@ -1,6 +1,6 @@
 #include "bsp_spi.h"
 #include "stm32f4xx_hal.h"
-
+//#include "stm32f4xx_ll.h"
 
 
 SPI_HandleTypeDef hspi1;
@@ -76,28 +76,45 @@ static uint8_t spix_read_byte(SPI_HandleTypeDef *hspi)
 	return rd_dat;
 }
 
+
+
+
+
+
+
+//uint8_t spi1_read_byte(void)
+//{
+////	uint8_t rd_dat = 0;
+////	rd_dat	= spix_read_byte(&hspi1);
+////	return rd_dat;
+//	while(!LL_SPI_IsActiveFlag_RXNE(SPI1));
+//	u8 r_dat = LL_SPI_ReceiveData8(SPI1);
+//	return r_dat;
+//}
+//void spi1_send_byte(uint8_t dat)
+//{
+////	uint8_t rd_dat = 0;
+////	rd_dat = spix_send_read_byte(&hspi1, dat);
+////	return rd_dat;
+//	while(!LL_SPI_IsActiveFlag_TXE(SPI1));
+//	LL_SPI_TransmitData8(SPI1, dat);
+
+//}
+
 void spi1_send_buf(const uint8_t *pData, uint16_t Size)
 {
 	HAL_SPI_Transmit(&hspi1, (uint8_t *)pData, Size, HAL_MAX_DELAY);
+
+
 }
 
 void spi1_read_buf(uint8_t *pData, uint16_t Size)
 {
+
 	if(HAL_SPI_Receive(&hspi1, pData, Size, HAL_MAX_DELAY) != HAL_OK){
 		spi_printf("BSP SPI ERR spi1_read_buf!!!!\n");
 	}
 }
 
-uint8_t spi1_read_byte(void)
-{
-	uint8_t rd_dat = 0;
-	rd_dat	= spix_read_byte(&hspi1);
-	return rd_dat;
-}
-uint8_t spi1_send_read_byte(uint8_t dat)
-{
-	uint8_t rd_dat = 0;
-	rd_dat = spix_send_read_byte(&hspi1, dat);
-	return rd_dat;
-}
+
 
