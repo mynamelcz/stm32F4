@@ -318,7 +318,7 @@ void spi_flash_test(void)
 //	u32 flash_sec_cnt = 0;
 	
 	flash_read_id();
-//	flash_read_jedec();
+	flash_read_jedec();
 //  flash_read_unique_id(unique_id);
 //	
 //	u8 i = 0;

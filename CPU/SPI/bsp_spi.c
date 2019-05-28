@@ -82,24 +82,6 @@ static uint8_t spix_read_byte(SPI_HandleTypeDef *hspi)
 
 
 
-//uint8_t spi1_read_byte(void)
-//{
-////	uint8_t rd_dat = 0;
-////	rd_dat	= spix_read_byte(&hspi1);
-////	return rd_dat;
-//	while(!LL_SPI_IsActiveFlag_RXNE(SPI1));
-//	u8 r_dat = LL_SPI_ReceiveData8(SPI1);
-//	return r_dat;
-//}
-//void spi1_send_byte(uint8_t dat)
-//{
-////	uint8_t rd_dat = 0;
-////	rd_dat = spix_send_read_byte(&hspi1, dat);
-////	return rd_dat;
-//	while(!LL_SPI_IsActiveFlag_TXE(SPI1));
-//	LL_SPI_TransmitData8(SPI1, dat);
-
-//}
 
 void spi1_send_buf(const uint8_t *pData, uint16_t Size)
 {

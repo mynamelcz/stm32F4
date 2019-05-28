@@ -46,44 +46,57 @@ void uart_reg_init(USART_TypeDef *Instance)
 	}
 }
 
-u8 tx_buf[10]={"sadasd"};
-void uart_dma_init(void)
+#define UART1_TX_BUF_SIZE			0x100
+uint8_t uart1_tx_buf[UART1_TX_BUF_SIZE];
+
+
+#define UART1_DMA_NUM				DMA2
+#define UART1_DMA_TX_CHL			LL_DMA_CHANNEL_4
+#define UART1_DMA_TX_STREAM			LL_DMA_STREAM_7
+#define UART1_DMA_CLK				LL_AHB1_GRP1_PERIPH_DMA2
+
+#define UART1_DMA_TX_DAT_BASE		(u32)(&(USART1->DR))
+
+
+
+void uart1_dma_init(void)
 {
 
-//	LL_DMA_InitTypeDef DMA_InitStruct = {0};
-//	
-//	DMA_InitStruct.Channel = LL_DMA_CHANNEL_4;
-//	DMA_InitStruct.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-//	
-//	DMA_InitStruct.MemoryOrM2MDstAddress = (u32)tx_buf;
-//	
-//	DMA_InitStruct.MemoryOrM2MDstDataSize = 10;
-//	DMA_InitStruct.PeriphOrM2MSrcAddress = 
+	LL_DMA_InitTypeDef DMA_InitStruct = {0};
+	
+	LL_AHB1_GRP1_EnableClock(UART1_DMA_CLK);
+	
+	LL_DMA_DeInit(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+	
+	while(LL_DMA_IsEnabledStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM) != DISABLE);
 	
 	
+	DMA_InitStruct.Channel = UART1_DMA_TX_CHL;
+	DMA_InitStruct.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
 	
+	DMA_InitStruct.MemoryOrM2MDstAddress = (u32)uart1_tx_buf;
+	DMA_InitStruct.NbData = UART1_TX_BUF_SIZE;
+	DMA_InitStruct.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
+	DMA_InitStruct.MemoryOrM2MDstIncMode = LL_DMA_MEMORY_INCREMENT;
 	
-//  NVIC_SetPriority(DMA2_Stream7_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 0));
-//  NVIC_EnableIRQ(DMA2_Stream7_IRQn);
-// /* USART1_TX Init */
-//  LL_DMA_SetChannelSelection(DMA2, LL_DMA_STREAM_7, LL_DMA_CHANNEL_4);
-
-//  LL_DMA_SetDataTransferDirection(DMA2, LL_DMA_STREAM_7, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
-
-//  LL_DMA_SetStreamPriorityLevel(DMA2, LL_DMA_STREAM_7, LL_DMA_PRIORITY_LOW);
-
-//  LL_DMA_SetMode(DMA2, LL_DMA_STREAM_7, LL_DMA_MODE_NORMAL);
-
-//  LL_DMA_SetPeriphIncMode(DMA2, LL_DMA_STREAM_7, LL_DMA_PERIPH_NOINCREMENT);
-
-//  LL_DMA_SetMemoryIncMode(DMA2, LL_DMA_STREAM_7, LL_DMA_MEMORY_INCREMENT);
-
-//  LL_DMA_SetPeriphSize(DMA2, LL_DMA_STREAM_7, LL_DMA_PDATAALIGN_BYTE);
-
-//  LL_DMA_SetMemorySize(DMA2, LL_DMA_STREAM_7, LL_DMA_MDATAALIGN_BYTE);
-
-//  LL_DMA_DisableFifoMode(DMA2, LL_DMA_STREAM_7);
-
+	DMA_InitStruct.PeriphOrM2MSrcAddress = UART1_DMA_TX_DAT_BASE;
+	DMA_InitStruct.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_BYTE;
+	DMA_InitStruct.PeriphOrM2MSrcIncMode = LL_DMA_PERIPH_NOINCREMENT;
+	
+	DMA_InitStruct.Mode = LL_DMA_MODE_NORMAL;
+	
+	DMA_InitStruct.MemBurst = LL_DMA_MBURST_SINGLE;
+	DMA_InitStruct.PeriphBurst = LL_DMA_PBURST_SINGLE;
+	
+	DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
+	DMA_InitStruct.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_FULL;
+	
+	DMA_InitStruct.Priority = LL_DMA_PRIORITY_MEDIUM;
+	
+    LL_DMA_Init(UART1_DMA_NUM, UART1_DMA_TX_STREAM, &DMA_InitStruct);
+	LL_DMA_EnableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+	
+	while(LL_DMA_IsEnabledStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM) != ENABLE);
 }
 
 
@@ -92,8 +105,17 @@ void uart_dma_init(void)
 	
 void uart1_init(void)
 {
+	u16 i = 0;
 	uart_gpio_init(USART1);
 	uart_reg_init(USART1);
+	
+
+	uart1_dma_init();
+	for(i = 0; i< UART1_TX_BUF_SIZE; i++){
+		uart1_tx_buf[i] = '#';
+	}
+	LL_USART_EnableDMAReq_TX(USART1);
+
 }
 
 
