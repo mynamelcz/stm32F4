@@ -46,7 +46,7 @@ void uart_reg_init(USART_TypeDef *Instance)
 	}
 }
 
-#define UART1_TX_BUF_SIZE			0x100
+#define UART1_TX_BUF_SIZE			(0x3+1)
 uint8_t uart1_tx_buf[UART1_TX_BUF_SIZE];
 
 
@@ -104,12 +104,17 @@ void uart1_dma_init(void)
 
 
 
-
-// 
-// uint32_t LL_DMA_IsActiveFlag_TC7(DMA_TypeDef *DMAx)
-//{
-//  return (READ_BIT(DMAx->HISR ,DMA_HISR_TCIF7)==(DMA_HISR_TCIF7));
-//} 
+void uartx_dma_send_buf(USART_TypeDef *uartx, u8 *buf, u16 len)
+{
+	
+	LL_DMA_DisableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+	LL_DMA_ClearFlag_TCx(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+	LL_DMA_SetDataLength(UART1_DMA_NUM, UART1_DMA_TX_STREAM, len);
+	LL_DMA_SetMemoryAddress(UART1_DMA_NUM, UART1_DMA_TX_STREAM, (u32)buf);
+	LL_DMA_EnableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+	LL_USART_EnableDMAReq_TX(uartx);
+	while(LL_DMA_IsActiveFlag_TCx(UART1_DMA_NUM, UART1_DMA_TX_STREAM)==0);
+}
 	
 void uart1_init(void)
 {
@@ -124,15 +129,20 @@ void uart1_init(void)
 	}
 
 //	LL_USART_EnableDMAReq_TX(USART1);
-//    while(LL_DMA_IsActiveFlag_TC7(UART1_DMA_NUM) == 0);
-//		for(i = 0; i< UART1_TX_BUF_SIZE; i++){
+//    while(LL_DMA_IsActiveFlag_TCx(UART1_DMA_NUM, UART1_DMA_TX_STREAM)==0);
+//	u8 buf[10]={"123456789"};
+	uartx_dma_send_buf(USART1, uart1_tx_buf,UART1_TX_BUF_SIZE);
+	
+//	for(i = 0; i< UART1_TX_BUF_SIZE; i++){
 //		uart1_tx_buf[i] = '^';
 //	}
-	LL_DMA_DisableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
-	LL_DMA_SetDataLength(UART1_DMA_NUM, UART1_DMA_TX_STREAM, UART1_TX_BUF_SIZE);
-	LL_DMA_EnableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
-	//uart1_dma_init();
-	LL_USART_EnableDMAReq_TX(USART1);
+	
+//	LL_DMA_DisableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+////	LL_DMA_ClearFlag_TC7(UART1_DMA_NUM);
+//	LL_DMA_ClearFlag_TCx(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+//	LL_DMA_SetDataLength(UART1_DMA_NUM, UART1_DMA_TX_STREAM, UART1_TX_BUF_SIZE);
+//	LL_DMA_EnableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+//	LL_USART_EnableDMAReq_TX(USART1);
 	
 }
 

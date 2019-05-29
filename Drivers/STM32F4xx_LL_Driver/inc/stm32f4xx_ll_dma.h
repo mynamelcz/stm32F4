@@ -2247,6 +2247,8 @@ __STATIC_INLINE void LL_DMA_ClearFlag_TC7(DMA_TypeDef *DMAx)
   WRITE_REG(DMAx->HIFCR , DMA_HIFCR_CTCIF7);
 }
 
+
+
 /**
   * @brief Clear Stream 0 transfer error flag.
   * @rmtoll LIFCR  CTEIF0    LL_DMA_ClearFlag_TE0
