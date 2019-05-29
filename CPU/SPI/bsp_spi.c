@@ -4,6 +4,7 @@
 
 
 SPI_HandleTypeDef hspi1;
+SPI_HandleTypeDef hspi2;
 DMA_HandleTypeDef hdma_spi1_rx;
 DMA_HandleTypeDef hdma_spi1_tx;
 
@@ -35,6 +36,21 @@ static void spi_gpio_init(SPI_HandleTypeDef *hspi)
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
   }
+  if(hspi->Instance==SPI2)
+  {
+    __HAL_RCC_SPI2_CLK_ENABLE();
+    /**SPI1 GPIO Configuration    
+    PB15     ------> SPI2_MOSI
+    PB14     ------> SPI2_MISO
+    PB13     ------> SPI2_SCK 
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_15|GPIO_PIN_14|GPIO_PIN_13;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  }
 
 }
 
@@ -58,26 +74,33 @@ void spi1_init(void)
   {
 	spi_err_callback(__LINE__);
   }
-  
   __HAL_SPI_ENABLE(&hspi1);
 }
-static uint8_t spix_send_read_byte(SPI_HandleTypeDef *hspi, uint8_t dat)
+
+
+
+void spi2_init(void)
 {
-    uint8_t s_dat = dat; 
-	uint8_t r_dat = 0; 
-    HAL_SPI_Transmit(hspi,&s_dat, 1, HAL_MAX_DELAY);
-	HAL_SPI_Receive(hspi, &r_dat, 1, HAL_MAX_DELAY);
-    return r_dat;
+  hspi2.Instance = SPI2;
+  hspi2.Init.Mode = SPI_MODE_MASTER;
+  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+	
+  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;    			//clk idle state 
+  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;       				 //
+  hspi2.Init.NSS = SPI_NSS_SOFT;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;   //clk prescaler
+  hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;			        //time out close
+  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi2.Init.CRCPolynomial = 7;
+  spi_gpio_init(&hspi2);
+  if (HAL_SPI_Init(&hspi2) != HAL_OK)
+  {
+	spi_err_callback(__LINE__);
+  }
+  __HAL_SPI_ENABLE(&hspi2);
 }
-static uint8_t spix_read_byte(SPI_HandleTypeDef *hspi)
-{
-	uint8_t rd_dat = 0;
-	rd_dat = spix_send_read_byte(hspi, 0xff);
-	return rd_dat;
-}
-
-
-
 
 
 
@@ -98,5 +121,21 @@ void spi1_read_buf(uint8_t *pData, uint16_t Size)
 	}
 }
 
+
+
+void spi2_send_buf(const uint8_t *pData, uint16_t Size)
+{
+	HAL_SPI_Transmit(&hspi2, (uint8_t *)pData, Size, HAL_MAX_DELAY);
+
+
+}
+
+void spi2_read_buf(uint8_t *pData, uint16_t Size)
+{
+
+	if(HAL_SPI_Receive(&hspi2, pData, Size, HAL_MAX_DELAY) != HAL_OK){
+		spi_printf("BSP SPI ERR spi1_read_buf!!!!\n");
+	}
+}
 
 

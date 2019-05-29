@@ -63,9 +63,10 @@ void uart1_dma_init(void)
 {
 
 	LL_DMA_InitTypeDef DMA_InitStruct = {0};
-	
+
+    /* UART  TX   DMA  configuration   */
 	LL_AHB1_GRP1_EnableClock(UART1_DMA_CLK);
-	
+
 	LL_DMA_DeInit(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
 	
 	while(LL_DMA_IsEnabledStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM) != DISABLE);
@@ -97,11 +98,18 @@ void uart1_dma_init(void)
 	LL_DMA_EnableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
 	
 	while(LL_DMA_IsEnabledStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM) != ENABLE);
+    /*************          END        **************/
+
 }
 
 
 
 
+// 
+// uint32_t LL_DMA_IsActiveFlag_TC7(DMA_TypeDef *DMAx)
+//{
+//  return (READ_BIT(DMAx->HISR ,DMA_HISR_TCIF7)==(DMA_HISR_TCIF7));
+//} 
 	
 void uart1_init(void)
 {
@@ -114,8 +122,18 @@ void uart1_init(void)
 	for(i = 0; i< UART1_TX_BUF_SIZE; i++){
 		uart1_tx_buf[i] = '#';
 	}
-	LL_USART_EnableDMAReq_TX(USART1);
 
+//	LL_USART_EnableDMAReq_TX(USART1);
+//    while(LL_DMA_IsActiveFlag_TC7(UART1_DMA_NUM) == 0);
+//		for(i = 0; i< UART1_TX_BUF_SIZE; i++){
+//		uart1_tx_buf[i] = '^';
+//	}
+	LL_DMA_DisableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+	LL_DMA_SetDataLength(UART1_DMA_NUM, UART1_DMA_TX_STREAM, UART1_TX_BUF_SIZE);
+	LL_DMA_EnableStream(UART1_DMA_NUM, UART1_DMA_TX_STREAM);
+	//uart1_dma_init();
+	LL_USART_EnableDMAReq_TX(USART1);
+	
 }
 
 
