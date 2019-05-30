@@ -9,16 +9,17 @@
 #define DUMMY_DATA	0xFF
 
 
-/**** FUN Interface ****/
+/**** SW Interface ****/
 #define spi_read_buf		spi1_read_buf
 #define spi_write_buf		spi1_send_buf
 #define spi_delay_us(x)		HAL_Delay(1)
 
 /**** HW Interface ****/
 #define SPI_CS_PORT			GPIOB
-#define SPI_CS_PIN			GPIO_PIN_0
-#define spi_cs_ctr(x)		(x)?HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_SET):\
-								HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_RESET)
+#define SPI_CS_PIN			LL_GPIO_PIN_0
+#define spi_cs_ctr(x)		(x)?LL_GPIO_SetOutputPin(SPI_CS_PORT, SPI_CS_PIN):\
+								LL_GPIO_ResetOutputPin(SPI_CS_PORT, SPI_CS_PIN)
+
 
 
 

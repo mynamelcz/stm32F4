@@ -1,20 +1,20 @@
 #include "spi_flash.h"
 #include "bsp_spi.h"
 #include "diskio.h"
+#include "stm32f4xx_ll.h"
 #include "stm32f4xx_hal.h"
-
-
 
 #define DUMMY_DATA	0xFF
 
 static void spi_cs_gpio_init(void)
 {
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = SPI_CS_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    HAL_GPIO_Init(SPI_CS_PORT, &GPIO_InitStruct);
+	LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = SPI_CS_PIN;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
+	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+	LL_GPIO_Init(SPI_CS_PORT, &GPIO_InitStruct);	
 }
 
 

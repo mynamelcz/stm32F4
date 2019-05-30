@@ -112,7 +112,6 @@ void spi1_send_buf(const uint8_t *pData, uint16_t Size)
 
 
 }
-
 void spi1_read_buf(uint8_t *pData, uint16_t Size)
 {
 
@@ -129,7 +128,6 @@ void spi2_send_buf(const uint8_t *pData, uint16_t Size)
 
 
 }
-
 void spi2_read_buf(uint8_t *pData, uint16_t Size)
 {
 

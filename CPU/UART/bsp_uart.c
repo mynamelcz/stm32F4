@@ -130,7 +130,7 @@ void uartx_dma_send_buf(USART_TypeDef *uartx, u8 *buf, u16 len)
 
 void uart1_init(void)
 {
-	u16 i = 0;
+
 	uart_gpio_init(USART1);
 	uart_reg_init(USART1);
 	
