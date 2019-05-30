@@ -89,8 +89,9 @@ int main(void)
   
  // sys_clk_cfg();
   gpio_clk_enable();
-  uart1_init();
-	
+  uart1_init(); 
+  LED_GPIO_Init();
+
   main_printf(">>>>>>>>>>>>>> Power ON <<<<<<<<<<<\n"); 
 #ifdef VECT_TAB_SRAM
   main_printf(">>>>>>>>>>>> Running in SRAM <<<<<<<<<<<\n"); 
@@ -99,7 +100,7 @@ int main(void)
 	
 
    
-  LED_GPIO_Init();	
+	
   
 #ifdef VECT_TAB_SRAM
   LED1_ON();

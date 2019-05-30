@@ -169,6 +169,18 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 1 */
 }
 
+/**
+  * @brief This function handles DMA2 stream7 global interrupt.
+  */
+void DMA2_Stream7_IRQHandler(void)
+{	
+	if(LL_DMA_IsActiveFlag_TC7(DMA2)){
+	//Transfer Complete
+		LL_DMA_ClearFlag_TC7(DMA2);
+
+	}		
+}	
+
 /******************************************************************************/
 /* STM32F4xx Peripheral Interrupt Handlers                                    */
 /* Add here the Interrupt Handlers for the used peripherals.                  */
