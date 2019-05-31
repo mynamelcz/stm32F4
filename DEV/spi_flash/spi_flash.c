@@ -4,6 +4,7 @@
 #define DUMMY_DATA	0xFF
 
 
+
 static void (*spi_cs_ctr)(u8) = NULL;
 static void (*spi_read_buf)(u8 *buf, u32 len) = NULL;
 static void (*spi_write_buf)(const u8 *buf, u32 len) = NULL;
@@ -32,6 +33,7 @@ static u32 flash_read_jedec(void)
 	spi_read_buf(buf,3);
 	spi_cs_ctr(1);
     dev_id = (buf[0]<<16) + (buf[1]<<8) + buf[2];	
+    spi_flash_obj.inf.jedec_id = dev_id;
  	spi_printf("FLSH JEDEC: 0x%x\n",dev_id);
 	return dev_id;
 }
@@ -161,6 +163,7 @@ static void flash_chip_erase(void)
 /*2.应确保写入的地方在同一个页*/
 static void flash_page_program(const u8 *buf, u32 addr, u32 len)
 {
+	ASSERT(buf);
 	if((len + addr&(FLASH_PAGE_SIZE-1)) > FLASH_PAGE_SIZE){		
 		spi_printf("FLASH WARNING: write too long or not in one page\n");
 	}
@@ -180,6 +183,7 @@ static void flash_page_program(const u8 *buf, u32 addr, u32 len)
 /******	 写flash 	******/
 static void flash_write_buf(const u8 *buf, u32 addr, u32 len)
 {
+	ASSERT(buf);
     u16 w_len = 0;
 	u16 page_offset = addr&(FLASH_PAGE_SIZE - 1);
     u16 page_last_len = FLASH_PAGE_SIZE - page_offset; 
@@ -204,6 +208,7 @@ static void flash_write_buf(const u8 *buf, u32 addr, u32 len)
 /******	 读flash 	******/	
 static void flash_read_buf(u8 *buf, u32 addr, u32 len)
 {
+	ASSERT(buf);
 	u8 cmd_buf[4];
     cmd_buf[0]=  FLASH_READ_DATA;
 	cmd_buf[1] = (addr>>16) & 0xff;
@@ -239,7 +244,6 @@ static void flash_erase_sectors(u32 start_sec, u32 sct_num)
 
 static u32 flash_get_sizeKB(void)
 {
-	spi_printf("FUN:%s\n",__func__);
     u32 flash_size = 0;
     const u32 flash_id[] = {0xEF4015,   //2M    W25Q16
 							0xEF4016,   //4M    W25Q32
@@ -249,6 +253,8 @@ static u32 flash_get_sizeKB(void)
 	for(u8 i=0; i< sizeof(flash_id)/sizeof(flash_id[0]); i++){
         if(flash_read_jedec() == flash_id[i]){
             flash_size = (1<<(i+1))<<10;
+            spi_flash_obj.inf.cap_kb = flash_size; 
+			spi_printf("FUN:%s : %d\n",__func__,flash_size);
             return flash_size;
         }    
 	}
@@ -257,12 +263,12 @@ static u32 flash_get_sizeKB(void)
 
 static u32 flash_get_status(void)
 {
-	u32 status = 0;
-	if(flash_get_sizeKB()){
-		status = 1;
-		return status;
-	}
-	return status;
+	if(spi_flash_obj.inf.dev_state == DEV_OFF_LINE){
+        if(flash_get_sizeKB()){
+            spi_flash_obj.inf.dev_state = DEV_ON_LINE;
+        }
+    }
+	return spi_flash_obj.inf.dev_state;
 }
 
 static bool flash_io_control(u8 cmd, void *buff)
@@ -274,7 +280,7 @@ static bool flash_io_control(u8 cmd, void *buff)
 			res = true;			//default ok;  因为写入时已经有等待写入完成，所以这里默认ok
             break;
         case FLASH_GET_SECTOR_COUNT:
-            *((u32 *)buff) = (flash_get_sizeKB()<<10)/FLASH_SECTOR_SIZE - FLASH_REV_SEC_NUM;
+            *((u32 *)buff) = (spi_flash_obj.inf.cap_kb<<10)/FLASH_SECTOR_SIZE - FLASH_REV_SEC_NUM;
             res = true;
             break;
         case FLASH_GET_SECTOR_SIZE:
@@ -325,13 +331,18 @@ static void spi_flash_init(__spi_ctr_obj *spi_obj)
 	
 	spi_cs_ctr(0);
 	flash_power_up();
+	flash_get_sizeKB();
+	if(flash_get_status() != DEV_ON_LINE){
+		spi_printf("[WARNING]:flash DEV_OFF_LINE\n");
+	}
+	flash_read_jedec();
 } 
 
 
 
 
 
-const __spi_flash_obj spi_flash_obj = {
+__spi_flash_obj  spi_flash_obj = {
    .init    = spi_flash_init,
    .read_id = flash_read_jedec,
    .status  = flash_get_status,

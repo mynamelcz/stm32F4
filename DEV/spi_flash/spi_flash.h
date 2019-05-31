@@ -16,12 +16,11 @@
 
 
 /*** FLASH ATTRIBUTE	****/
-#define FLASH_JEDEC_ID			0xEF4015
-
 #define	FLASH_PAGE_SIZE			256
 #define FLASH_SECTOR_SIZE		(4<<10)
 #define FLASH_SCT_POWER		    12
 #define FLASH_BLOCK_SIZE		(64<<10)
+
 
 /***	 FLASH CMD		****/
 #define FLASH_WIRT_ENABLE		0x06 
@@ -66,7 +65,16 @@ typedef enum{
 	FLASH_GET_SIZE, 	   //unit KB 
 }IO_CTR_CMD;
 
+typedef enum{
+	DEV_OFF_LINE,
+	DEV_ON_LINE,
+}__dev_state_e;
 
+typedef struct{
+	__dev_state_e	dev_state;
+	u32 			cap_kb;	
+	u32 			jedec_id;
+}__flash_inf;
 
 
 typedef struct{
@@ -77,10 +85,11 @@ typedef struct{
 	void (*write)(const u8 *buf, u32 addr, u32 len);
 	void (*erase)(u32 start_sec, u32 sct_num);
 	bool (*io_ctr)(u8 cmd, void *buff);
+	__flash_inf		inf;
 }__spi_flash_obj;
 
 
-extern const __spi_flash_obj spi_flash_obj;
+extern  __spi_flash_obj spi_flash_obj;
 
 
 void spi_flash_test(void);

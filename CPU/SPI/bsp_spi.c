@@ -82,8 +82,10 @@ static void spi1_init(void(*cs_fun)(u8))
 
 
 
-static void spi2_init(void)
+static void spi2_init(void(*cs_fun)(u8))
 {
+
+  spi2_obj.cs_str = cs_fun;
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
@@ -139,9 +141,17 @@ static void spi2_read_buf(uint8_t *pData, uint32_t Size)
 
 
 __spi_ctr_obj spi1_obj = {
+	.cs_str = NULL,
 	.init 	= spi1_init,
 	.read   = spi1_read_buf,
 	.write  = spi1_send_buf,
+};
+
+__spi_ctr_obj spi2_obj = {
+	.cs_str = NULL,
+	.init 	= spi2_init,
+	.read   = spi2_read_buf,
+	.write  = spi2_send_buf,
 };
 
 

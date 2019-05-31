@@ -10,6 +10,7 @@ typedef struct{
 }__spi_ctr_obj;
 
 extern __spi_ctr_obj spi1_obj;
+extern __spi_ctr_obj spi2_obj;
 
 
 #endif

@@ -36,6 +36,12 @@
 #define SD_CMD_READ_OCR               58  /*!< CMD58 = 0x7A */
 #define SD_CMD_CRC_ON_OFF             59  /*!< CMD59 = 0x7B */
 
+typedef enum {
+	SD_OFF_LINE = 0,
+	SD_ON_LINE,
+}SD_DEV_STATE;
+
+
 
 typedef enum {
 	SD_VER_UNKNOW,
@@ -50,7 +56,7 @@ typedef enum {
     SD_TYPE_SDSC,   // <2G 
     SD_TYPE_SDHC,   //  2G ~ 32G
     SD_TYPE_SDXC,   // 32G ~ 2T
-}SD_CAP_E;
+}SD_TYPE_E;
 
 typedef enum {
     SD_VOL_HIGH,    // 2.7~3.6
@@ -66,6 +72,10 @@ typedef enum {
     CLASS_10,       // >= 10M/S
 }SD_CLASS_E;
 
+
+typedef enum {
+	SD_NO_ERR,
+}SD_ERR_E;
 
 typedef struct
 {
@@ -153,16 +163,6 @@ typedef enum
   SD_CARD_DISCONNECTED,
   SD_CARD_ERROR                     = 0x000000FFU,
 
-  // SD_CARD_READY                  = 0x00000001U,  #<{(|!< Card state is ready                     |)}>#
-  // SD_CARD_IDENTIFICATION         = 0x00000002U,  #<{(|!< Card is in identification state         |)}>#
-  // SD_CARD_STANDBY                = 0x00000003U,  #<{(|!< Card is in standby state                |)}>#
-  // SD_CARD_TRANSFER               = 0x00000004U,  #<{(|!< Card is in transfer state               |)}>#  
-  // SD_CARD_SENDING                = 0x00000005U,  #<{(|!< Card is sending an operation            |)}>#
-  // SD_CARD_RECEIVING              = 0x00000006U,  #<{(|!< Card is receiving operation information |)}>#
-  // SD_CARD_PROGRAMMING            = 0x00000007U,  #<{(|!< Card is in programming state            |)}>#
-  // SD_CARD_DISCONNECTED           = 0x00000008U,  #<{(|!< Card is disconnected                    |)}>#
-  // SD_CARD_ERROR                  = 0x000000FFU   #<{(|!< Card response Error                     |)}>#
-  //
 }SD_CAR_STATE_E;
 
 
@@ -262,6 +262,24 @@ typedef struct
 
 
 
+typedef struct
+{	
+	SD_TYPE_E   	type;
+	SD_DEV_STATE	dev_state;
+	SD_CSD_T 		CSD;
+	SD_CID_T 		CID;
+	
+	u32 			block_sz;
+	
+}__sd_inf_t;
+
+
+
+typedef struct
+{
+	__sd_inf_t		sd_inf;
+
+}__spi_sd_obj;
 
 #endif
 
