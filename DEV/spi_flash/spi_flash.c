@@ -111,7 +111,7 @@ static void flash_sector_erase(u32 sector_addr)
 {
 	if(sector_addr& (FLASH_SECTOR_SIZE-1)){		
 		// not align by FLASH_SECTOR_SIZE
-		spi_printf("FLASH WARNING: flash_sector_erase addr not align\n");
+		spi_printf("[FLASH WARNING]:  flash_sector_erase addr not align\n");
 	}
 	u8 cmd_buf[4];
     cmd_buf[0]=  FLASH_SECTOR_ERASE;
@@ -131,7 +131,7 @@ static void flash_block64_erase(u32 block64_addr)
 {
 	if(block64_addr& (FLASH_BLOCK_SIZE-1)){		
 		// not align by FLASH_SECTOR_SIZE
-		spi_printf("FLASH WARNING: flash_block64_erase addr not align\n");
+		spi_printf("[FLASH WARNING]: flash_block64_erase addr not align\n");
 	}
 	u8 cmd_buf[4];
     cmd_buf[0]=  FLASH_BLOCK64_ERASE;
@@ -165,7 +165,7 @@ static void flash_page_program(const u8 *buf, u32 addr, u32 len)
 {
 	ASSERT(buf);
 	if((len + addr&(FLASH_PAGE_SIZE-1)) > FLASH_PAGE_SIZE){		
-		spi_printf("FLASH WARNING: write too long or not in one page\n");
+		spi_printf("[FLASH WARNING]: write too long or not in one page\n");
 	}
 	u8 cmd_buf[4];
     cmd_buf[0]=  FLASH_PAGE_PROGRAM;

@@ -186,50 +186,6 @@ typedef struct
 
 }SD_CarInf_T;
 
-//typedef struct __SD_HandleTypeDef
-//{
-//  SD_TypeDef                   *Instance;        /*!< SD registers base address           */
-//  
-//  SD_InitTypeDef               Init;             /*!< SD required parameters              */
-//  
-//  HAL_LockTypeDef              Lock;             /*!< SD locking object                   */
-//  
-//  u32                     *pTxBuffPtr;      /*!< Pointer to SD Tx transfer Buffer    */
-
-//  u32                     TxXferSize;       /*!< SD Tx Transfer size                 */
-
-//  u32                     *pRxBuffPtr;      /*!< Pointer to SD Rx transfer Buffer    */
-
-//  u32                     RxXferSize;       /*!< SD Rx Transfer size                 */
-//  
-//  volatile u32                Context;          /*!< SD transfer context                 */
-// 
-//  volatile HAL_SD_StateTypeDef     State;            /*!< SD card State                       */
-//  
-//  volatile u32                ErrorCode;        /*!< SD Card Error codes                 */  
-// 
-//  DMA_HandleTypeDef            *hdmarx;          /*!< SD Rx DMA handle parameters         */
-//  
-//  DMA_HandleTypeDef            *hdmatx;          /*!< SD Tx DMA handle parameters         */
-//  
-//  HAL_SD_CardInfoTypeDef       SdCard;           /*!< SD Card information                 */
-//  
-//  u32                     CSD[4];           /*!< SD card specific data table         */
-//  
-//  u32                     CID[4];           /*!< SD card identification number table */
-//  
-//#if (USE_HAL_SD_REGISTER_CALLBACKS == 1)
-//  void (* TxCpltCallback)                 (struct __SD_HandleTypeDef *hsd);
-//  void (* RxCpltCallback)                 (struct __SD_HandleTypeDef *hsd);
-//  void (* ErrorCallback)                  (struct __SD_HandleTypeDef *hsd);
-//  void (* AbortCpltCallback)              (struct __SD_HandleTypeDef *hsd);
-
-//  void (* MspInitCallback)                (struct __SD_HandleTypeDef *hsd);
-//  void (* MspDeInitCallback)              (struct __SD_HandleTypeDef *hsd);
-//#endif  
-//}SD_HandleTypeDef;
-
-
 typedef struct
 {
   volatile u8  DataBusWidth;           /*!< Shows the currently defined data bus width                 */
@@ -244,21 +200,6 @@ typedef struct
   volatile u8  EraseOffset;            /*!< Carries information about the erase offset                 */
 
 }SD_CardStatusTypeDef;
-
-//#if (USE_HAL_SD_REGISTER_CALLBACKS == 1)
-///** @defgroup SD_Exported_Types_Group7 SD Callback ID enumeration definition 
-//  * @{
-//  */
-//typedef enum
-//{
-//  HAL_SD_TX_CPLT_CB_ID                 = 0x00U,  /*!< SD Tx Complete Callback ID                     */
-//  HAL_SD_RX_CPLT_CB_ID                 = 0x01U,  /*!< SD Rx Complete Callback ID                     */
-//  HAL_SD_ERROR_CB_ID                   = 0x02U,  /*!< SD Error Callback ID                           */
-//  HAL_SD_ABORT_CB_ID                   = 0x03U,  /*!< SD Abort Callback ID                           */
-
-//  HAL_SD_MSP_INIT_CB_ID                = 0x10U,  /*!< SD MspInit Callback ID                         */
-//  HAL_SD_MSP_DEINIT_CB_ID              = 0x11U   /*!< SD MspDeInit Callback ID                       */
-//}HAL_SD_CallbackIDTypeDef;
 
 
 
