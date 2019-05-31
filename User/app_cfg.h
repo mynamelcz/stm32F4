@@ -3,6 +3,8 @@
 #include "SEGGER_RTT.h"
 #include "stdio.h"
 
+#define __ASSERT_PARAM
+
 #define DBUG_Printf 	printf		// MY_RTT_printf
 #define DBUG_Put_hex 	my_printhex	
 

@@ -467,19 +467,24 @@
               <FilePath>..\Src\main.c</FilePath>
             </File>
             <File>
+              <FileName>bsp_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\bsp_init\bsp_init.c</FilePath>
+            </File>
+            <File>
               <FileName>task_manage.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\task_manage\task_manage.c</FilePath>
             </File>
             <File>
-              <FileName>cpu_usage.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\User\cpu_usage\cpu_usage.c</FilePath>
-            </File>
-            <File>
               <FileName>common.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\common\common.c</FilePath>
+            </File>
+            <File>
+              <FileName>cpu_usage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\cpu_usage\cpu_usage.c</FilePath>
             </File>
             <File>
               <FileName>low_power.c</FileName>
@@ -1070,7 +1075,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F407xx,VECT_TAB_SRAM,USE_FULL_LL_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Lib\RTT;..\User;..\User\task_manage;..\User\cpu_usage;..\User\common;..\User\low_power;..\CPU\SPI;..\DEV\LED;..\DEV\spi_flash;..\CPU\UART;..\Lib\my_print;..\Lib\FATFS;..\Lib\vfs;..\Lib\list;..\Drivers\STM32F4xx_LL_Driver\inc;..\CPU\SYS;..\DEV\spi_SD</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Lib\RTT;..\User;..\User\task_manage;..\User\cpu_usage;..\User\common;..\User\low_power;..\CPU\SPI;..\DEV\LED;..\DEV\spi_flash;..\CPU\UART;..\Lib\my_print;..\Lib\FATFS;..\Lib\vfs;..\Lib\list;..\Drivers\STM32F4xx_LL_Driver\inc;..\CPU\SYS;..\DEV\spi_SD;..\User\bsp_init</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1200,19 +1205,24 @@
               <FilePath>..\Src\main.c</FilePath>
             </File>
             <File>
+              <FileName>bsp_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\bsp_init\bsp_init.c</FilePath>
+            </File>
+            <File>
               <FileName>task_manage.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\task_manage\task_manage.c</FilePath>
             </File>
             <File>
-              <FileName>cpu_usage.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\User\cpu_usage\cpu_usage.c</FilePath>
-            </File>
-            <File>
               <FileName>common.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\common\common.c</FilePath>
+            </File>
+            <File>
+              <FileName>cpu_usage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\cpu_usage\cpu_usage.c</FilePath>
             </File>
             <File>
               <FileName>low_power.c</FileName>

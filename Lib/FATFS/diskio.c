@@ -28,7 +28,7 @@ DSTATUS disk_status (
 	DSTATUS stat = STA_NOINIT;
 	switch (pdrv) {
 	case DEV_FLASH:
-		if(flash_get_sizeKB()){
+		if(spi_flash_obj.status()){
 			stat &= ~STA_NOINIT;
 		}
 		return stat;
@@ -52,8 +52,8 @@ DSTATUS disk_initialize (
 	DSTATUS stat = STA_NOINIT;
 	switch (pdrv) {
 	case DEV_FLASH:
-	    spi_flash_init();
-		if(flash_get_sizeKB()){
+	//  spi_flash_obj.init();
+		if(spi_flash_obj.status()){
 			stat &= ~STA_NOINIT;
 		}
 		return stat;
@@ -83,7 +83,7 @@ DRESULT disk_read (
 	switch (pdrv) {
 	case DEV_FLASH:
 		 sector += FLASH_REV_SEC_NUM;
-		 flash_read_buf(buff, sector << FLASH_SCT_POWER, count << FLASH_SCT_POWER);
+		 spi_flash_obj.read(buff, sector << FLASH_SCT_POWER, count << FLASH_SCT_POWER);
 	     res = RES_OK;  //default  ok
 		return res;
 	case DEV_RAM :
@@ -115,8 +115,8 @@ DRESULT disk_write (
 	switch (pdrv) {
 	case DEV_FLASH:
 		 sector += FLASH_REV_SEC_NUM;  
-         flash_erase_sectors(sector, count); 
-	     flash_write_buf(buff, sector << FLASH_SCT_POWER, count << FLASH_SCT_POWER);
+         spi_flash_obj.erase(sector, count); 
+	     spi_flash_obj.write(buff, sector << FLASH_SCT_POWER, count << FLASH_SCT_POWER);
 	     res = RES_OK;  //default ok
 		return res;		
 	case DEV_RAM :
@@ -145,7 +145,7 @@ DRESULT disk_ioctl (
 	DRESULT res = RES_PARERR;
 	switch (pdrv) {
     case DEV_FLASH:
-        if(flash_io_control(cmd, buff)){
+        if(spi_flash_obj.io_ctr(cmd, buff)){
             res = RES_OK;
         }
         return res;

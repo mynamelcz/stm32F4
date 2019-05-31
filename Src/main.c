@@ -26,53 +26,20 @@
 #include "includes.h"
 #include "task_manage.h"
 
+#include "bsp_init.h"
 
-#include "bsp_uart.h"
-#include "bsp_sys.h"
 
 #include "led.h"
-#include "spi_flash.h"
 
+#include "spi_flash.h"
 #include "vfile_sys.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
 
 
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void gpio_clk_enable(void);
 
 
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 
 /**
@@ -85,12 +52,12 @@ int main(void)
 
     HAL_Init();
     SystemClock_Config();  
+    bsp_init();
+  
+
 
   
- // sys_clk_cfg();
-  gpio_clk_enable();
-  uart1_init(); 
-  LED_GPIO_Init();
+
 
   main_printf(">>>>>>>>>>>>>> Power ON <<<<<<<<<<<\n"); 
 #ifdef VECT_TAB_SRAM
@@ -106,10 +73,10 @@ int main(void)
   LED1_ON();
   LED2_ON();
 #endif  
-//  fs_test();
-   spi_flash_init();
-   spi_flash_test();
 
+
+   spi_flash_test();
+//	fs_test();
 
   /* Start scheduler */
 //   task_startup();
@@ -135,14 +102,6 @@ int main(void)
   /* USER CODE END 3 */
 }
 
-void gpio_clk_enable(void)
-{
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
-}
 
 /**
   * @brief System Clock Configuration

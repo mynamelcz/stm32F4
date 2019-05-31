@@ -2,13 +2,14 @@
 #define __BSP_SPI_H
 #include "includes.h"
 
-void spi1_init(void);
-void spi1_send_buf(const u8 *pData, u16 Size);
-void spi1_read_buf(u8 *pData, u16 Size);
+typedef struct{
+	void (*init)(void(*cs_fun)(u8));
+	void (*cs_str)(u8 en);
+	void (*read)(u8 *buf, u32 len);
+	void (*write)(const u8 *buf, u32 len);	
+}__spi_ctr_obj;
 
-void spi2_init(void);
-void spi2_send_buf(const u8 *pData, u16 Size);
-void spi2_read_buf(u8 *pData, u16 Size);
+extern __spi_ctr_obj spi1_obj;
 
 
 #endif

@@ -1,6 +1,7 @@
 #ifndef __SPI_FLASH_H
 #define __SPI_FLASH_H
 #include "includes.h"
+#include "diskio.h"
 #include "bsp_spi.h"
 
 #define FLASH_REV_SEC_NUM		0
@@ -10,16 +11,7 @@
 
 
 /**** SW Interface ****/
-#define spi_read_buf		spi1_read_buf
-#define spi_write_buf		spi1_send_buf
-#define spi_delay_us(x)		HAL_Delay(1)
-
-/**** HW Interface ****/
-#define SPI_CS_PORT			GPIOB
-#define SPI_CS_PIN			LL_GPIO_PIN_0
-#define spi_cs_ctr(x)		(x)?LL_GPIO_SetOutputPin(SPI_CS_PORT, SPI_CS_PIN):\
-								LL_GPIO_ResetOutputPin(SPI_CS_PORT, SPI_CS_PIN)
-
+#define spi_delay_us(x)			sys_delay_us(x)
 
 
 
@@ -58,15 +50,37 @@
 #define STATUS1_REG_BUSY_BIT		BIT(0)		// RO	write busy
 #define STATUS1_REG_WEL_BIT			BIT(1)		// RO	write enable
 
+/***   IO CTROL CMD ***/
+typedef enum{
+	/* file sys cmd */
+	FLASH_CTRL_SYNC 		= CTRL_SYNC,
+	FLASH_GET_SECTOR_COUNT	= GET_SECTOR_COUNT,
+	FLASH_GET_SECTOR_SIZE   = GET_SECTOR_SIZE,
+	FLASH_GET_BLOCK_SIZE	= GET_BLOCK_SIZE,
+	FLASH_CTRL_TRIM			= CTRL_TRIM,
+	FLASH_CTRL_POWER		= CTRL_POWER,
+	FLASH_CTRL_LOCK			= CTRL_LOCK,
+	FLASH_CTRL_EJECT		= CTRL_EJECT,
+	FLASH_CTRL_FORMAT		= CTRL_FORMAT,
+	/* user cmd */
+	FLASH_GET_SIZE, 	   //unit KB 
+}IO_CTR_CMD;
 
-/***	 API    ****/
-void spi_flash_init(void);
-u32 flash_get_sizeKB(void);
-u32 flash_read_jedec(void);
-void flash_read_buf(u8 *buf, u32 addr, u32 len);
-void flash_write_buf(const u8 *buf, u32 addr, u32 len);
-void flash_erase_sectors(u32 start_sec, u32 sct_num);
-bool flash_io_control(u8 cmd, void *buff);
+
+
+
+typedef struct{
+	void (*init)(__spi_ctr_obj *spi_obj);
+    u32  (*read_id)(void);
+    u32  (*status)(void);
+	void (*read)(u8 *buf, u32 addr, u32 len);
+	void (*write)(const u8 *buf, u32 addr, u32 len);
+	void (*erase)(u32 start_sec, u32 sct_num);
+	bool (*io_ctr)(u8 cmd, void *buff);
+}__spi_flash_obj;
+
+
+extern const __spi_flash_obj spi_flash_obj;
 
 
 void spi_flash_test(void);

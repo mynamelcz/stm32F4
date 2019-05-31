@@ -8,7 +8,7 @@ SPI_HandleTypeDef hspi2;
 DMA_HandleTypeDef hdma_spi1_rx;
 DMA_HandleTypeDef hdma_spi1_tx;
 
-void spi_err_callback(u16 line)
+static void spi_err_callback(u16 line)
 {
 	spi_printf("BSP SPI ERR !!!!\n");
 	spi_printf("ERR LINE: %d\n",line);
@@ -54,8 +54,11 @@ static void spi_gpio_init(SPI_HandleTypeDef *hspi)
 
 }
 
-void spi1_init(void)
+static void spi1_init(void(*cs_fun)(u8))
 {
+  ASSERT(cs_fun);
+  spi1_obj.cs_str = cs_fun;
+	
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
@@ -79,7 +82,7 @@ void spi1_init(void)
 
 
 
-void spi2_init(void)
+static void spi2_init(void)
 {
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
@@ -106,13 +109,13 @@ void spi2_init(void)
 
 
 
-void spi1_send_buf(const uint8_t *pData, uint16_t Size)
+static void spi1_send_buf(const uint8_t *pData, uint32_t Size)
 {
 	HAL_SPI_Transmit(&hspi1, (uint8_t *)pData, Size, HAL_MAX_DELAY);
 
 
 }
-void spi1_read_buf(uint8_t *pData, uint16_t Size)
+static void spi1_read_buf(uint8_t *pData, uint32_t Size)
 {
 
 	if(HAL_SPI_Receive(&hspi1, pData, Size, HAL_MAX_DELAY) != HAL_OK){
@@ -120,20 +123,25 @@ void spi1_read_buf(uint8_t *pData, uint16_t Size)
 	}
 }
 
-
-
-void spi2_send_buf(const uint8_t *pData, uint16_t Size)
+static void spi2_send_buf(const uint8_t *pData, uint32_t Size)
 {
 	HAL_SPI_Transmit(&hspi2, (uint8_t *)pData, Size, HAL_MAX_DELAY);
 
 
 }
-void spi2_read_buf(uint8_t *pData, uint16_t Size)
+static void spi2_read_buf(uint8_t *pData, uint32_t Size)
 {
-
 	if(HAL_SPI_Receive(&hspi2, pData, Size, HAL_MAX_DELAY) != HAL_OK){
 		spi_printf("BSP SPI ERR spi1_read_buf!!!!\n");
 	}
 }
+
+
+
+__spi_ctr_obj spi1_obj = {
+	.init 	= spi1_init,
+	.read   = spi1_read_buf,
+	.write  = spi1_send_buf,
+};
 
 

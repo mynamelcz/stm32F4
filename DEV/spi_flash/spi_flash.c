@@ -1,27 +1,17 @@
 #include "spi_flash.h"
 #include "bsp_spi.h"
-#include "diskio.h"
-#include "stm32f4xx_ll.h"
-#include "stm32f4xx_hal.h"
 
 #define DUMMY_DATA	0xFF
 
-static void spi_cs_gpio_init(void)
-{
-	LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = SPI_CS_PIN;
-	GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-	LL_GPIO_Init(SPI_CS_PORT, &GPIO_InitStruct);	
-}
 
+static void (*spi_cs_ctr)(u8) = NULL;
+static void (*spi_read_buf)(u8 *buf, u32 len) = NULL;
+static void (*spi_write_buf)(const u8 *buf, u32 len) = NULL;
 
 
 
 /******	 读取 ID	******/
-u16 flash_read_id(void)
+static u16 flash_read_id(void)
 {
 	u8 cmd_buf[4]={FLASH_READ_DEVICE_ID, DUMMY_DATA, DUMMY_DATA, DUMMY_DATA};
 	u16 dev_id = 0;	  
@@ -32,7 +22,7 @@ u16 flash_read_id(void)
  	spi_printf("FLSH ID: 0x%x\n",dev_id);
 	return dev_id;
 }  
-u32 flash_read_jedec(void)
+static u32 flash_read_jedec(void)
 {
 	u32 dev_id = 0;
 	u8 cmd_buf[1]={FLASH_READ_JEDEC_ID};
@@ -45,7 +35,7 @@ u32 flash_read_jedec(void)
  	spi_printf("FLSH JEDEC: 0x%x\n",dev_id);
 	return dev_id;
 }
-void flash_read_unique_id(u8 *id_buf)
+static void flash_read_unique_id(u8 *id_buf)
 {
 	u8 cmd_buf[5]={FLASH_READ_UNIQUE_ID,DUMMY_DATA, DUMMY_DATA,DUMMY_DATA,DUMMY_DATA};
 	spi_cs_ctr(0);
@@ -56,7 +46,7 @@ void flash_read_unique_id(u8 *id_buf)
 
 
 /******	 写使能 	******/
-void flash_write_enable(void)
+static void flash_write_enable(void)
 {
 	u8 cmd_buf[1]={FLASH_WIRT_ENABLE};
 	spi_cs_ctr(0);
@@ -64,7 +54,7 @@ void flash_write_enable(void)
 	spi_cs_ctr(1);
 }
 /******	 写禁止 	******/
-void flash_write_disable(void)
+static void flash_write_disable(void)
 {
 	u8 cmd_buf[1]={FLASH_WIRT_DISABLE};
 	spi_cs_ctr(0);
@@ -73,7 +63,7 @@ void flash_write_disable(void)
 }
 
 /******	 读状态REG 	******/
-u8 flash_read_status_register(void)
+static u8 flash_read_status_register(void)
 {
 	u8 status = 0;
 	u8 cmd_buf[1]={FLASH_READ_STATUS1};
@@ -88,13 +78,13 @@ u8 flash_read_status_register(void)
 //FLASH_WRITE_STATUS
 //}
 /******	 忙碌等待 	******/
-void flash_wait_write_end(void)
+static void flash_wait_write_end(void)
 {
 	while(flash_read_status_register()&STATUS1_REG_BUSY_BIT);
 }
 
 /******	 掉电模式 	******/
-void flash_power_down(void)
+static void flash_power_down(void)
 {
 	u8 cmd_buf[1]={FLASH_POWER_DOWN};
 	spi_cs_ctr(0);
@@ -103,7 +93,7 @@ void flash_power_down(void)
 	spi_delay_us(3);	
 }
 /******	 唤醒  	******/
-void flash_power_up(void)
+static void flash_power_up(void)
 {
 	u8 cmd_buf[1]={FLASH_POWER_ON};
 	spi_cs_ctr(0);
@@ -115,7 +105,7 @@ void flash_power_up(void)
 /******	 扇区 擦除 	******/
 /*1.地址要 4k 对齐		*/
 /*如果没有对齐，则地址落在哪个扇区哪个扇区就被擦除*/
-void flash_sector_erase(u32 sector_addr)
+static void flash_sector_erase(u32 sector_addr)
 {
 	if(sector_addr& (FLASH_SECTOR_SIZE-1)){		
 		// not align by FLASH_SECTOR_SIZE
@@ -135,7 +125,7 @@ void flash_sector_erase(u32 sector_addr)
 
 /******	 BLK64 擦除 	******/		
 /*1.地址要 64k 对齐		*/
-void flash_block64_erase(u32 block64_addr)
+static void flash_block64_erase(u32 block64_addr)
 {
 	if(block64_addr& (FLASH_BLOCK_SIZE-1)){		
 		// not align by FLASH_SECTOR_SIZE
@@ -154,7 +144,7 @@ void flash_block64_erase(u32 block64_addr)
 }
 
 /******	 整片 擦除 	******/		
-void flash_chip_erase(void)
+static void flash_chip_erase(void)
 {
 	u8 cmd_buf[1];
     cmd_buf[0]=  FLASH_CHIP_ERASE;
@@ -169,7 +159,7 @@ void flash_chip_erase(void)
 /******	 页 写入 	******/
 /*1.应确保写入的地方已经被擦除*/
 /*2.应确保写入的地方在同一个页*/
-void flash_page_program(const u8 *buf, u32 addr, u32 len)
+static void flash_page_program(const u8 *buf, u32 addr, u32 len)
 {
 	if((len + addr&(FLASH_PAGE_SIZE-1)) > FLASH_PAGE_SIZE){		
 		spi_printf("FLASH WARNING: write too long or not in one page\n");
@@ -188,7 +178,7 @@ void flash_page_program(const u8 *buf, u32 addr, u32 len)
 }
 
 /******	 写flash 	******/
-void flash_write_buf(const u8 *buf, u32 addr, u32 len)
+static void flash_write_buf(const u8 *buf, u32 addr, u32 len)
 {
     u16 w_len = 0;
 	u16 page_offset = addr&(FLASH_PAGE_SIZE - 1);
@@ -212,7 +202,7 @@ void flash_write_buf(const u8 *buf, u32 addr, u32 len)
     flash_page_program(buf+w_len, addr+w_len, last_page_len);
 }
 /******	 读flash 	******/	
-void flash_read_buf(u8 *buf, u32 addr, u32 len)
+static void flash_read_buf(u8 *buf, u32 addr, u32 len)
 {
 	u8 cmd_buf[4];
     cmd_buf[0]=  FLASH_READ_DATA;
@@ -224,7 +214,7 @@ void flash_read_buf(u8 *buf, u32 addr, u32 len)
 	spi_read_buf(buf,len);
 	spi_cs_ctr(1);	
 }
-void flash_fast_read_buf(u8 *buf, u32 addr, u32 len)
+static void flash_fast_read_buf(u8 *buf, u32 addr, u32 len)
 {
 	u8 cmd_buf[5];
     cmd_buf[0]=  FLASH_FAST_READ_DATA;
@@ -237,19 +227,17 @@ void flash_fast_read_buf(u8 *buf, u32 addr, u32 len)
 	spi_read_buf(buf,len);
 	spi_cs_ctr(1);	
 }
-void flash_erase_sectors(u32 start_sec, u32 sct_num)
+static void flash_erase_sectors(u32 start_sec, u32 sct_num)
 {
-	spi_printf("start time = %d\n",HAL_GetTick());
 	while(sct_num--){		
 		spi_printf("erase_sec = %d\n",start_sec);
         flash_sector_erase(start_sec<<FLASH_SCT_POWER);
         start_sec++;
 
     }
-	spi_printf("end time = %d\n",HAL_GetTick());
 }
 
-u32 flash_get_sizeKB(void)
+static u32 flash_get_sizeKB(void)
 {
 	spi_printf("FUN:%s\n",__func__);
     u32 flash_size = 0;
@@ -266,51 +254,105 @@ u32 flash_get_sizeKB(void)
 	}
 	return 0;
 }
-bool flash_io_control(u8 cmd, void *buff)
+
+static u32 flash_get_status(void)
+{
+	u32 status = 0;
+	if(flash_get_sizeKB()){
+		status = 1;
+		return status;
+	}
+	return status;
+}
+
+static bool flash_io_control(u8 cmd, void *buff)
 {
     u8 res = false;
     switch(cmd){
 /* Generic command (Used by FatFs) */
-        case CTRL_SYNC:			//make sure write end
+        case FLASH_CTRL_SYNC:			//make sure write end
 			res = true;			//default ok;  因为写入时已经有等待写入完成，所以这里默认ok
             break;
-        case GET_SECTOR_COUNT:
+        case FLASH_GET_SECTOR_COUNT:
             *((u32 *)buff) = (flash_get_sizeKB()<<10)/FLASH_SECTOR_SIZE - FLASH_REV_SEC_NUM;
             res = true;
             break;
-        case GET_SECTOR_SIZE:
+        case FLASH_GET_SECTOR_SIZE:
             *((u32 *)buff) = FLASH_SECTOR_SIZE;
             res = true;
             break;
-        case GET_BLOCK_SIZE:
+        case FLASH_GET_BLOCK_SIZE:
             *((u32 *)buff) = FLASH_BLOCK_SIZE;
             res = true;
             break;
-        case CTRL_TRIM:
+        case FLASH_CTRL_TRIM:
             break;
 /* Generic command (Not used by FatFs) */
-        case CTRL_POWER:
+        case FLASH_CTRL_POWER:
             break;
-        case CTRL_LOCK:
+        case FLASH_CTRL_LOCK:
             break;
-        case CTRL_EJECT:
+        case FLASH_CTRL_EJECT:
             break;
-        case CTRL_FORMAT:
+        case FLASH_CTRL_FORMAT:
             break;
+/*    user cmd   */		
+		case FLASH_GET_SIZE:
+			*((u32 *)buff) = flash_get_sizeKB();
+			res = true;	
+			break;
 		default:
 			break;
 
     }
     return res;
 } 
-void spi_flash_init(void)
+
+
+
+static void spi_flash_init(__spi_ctr_obj *spi_obj)
 { 
 	spi_printf("FUN:%s\n",__func__);
-	spi1_init();
-    spi_cs_gpio_init();
+	ASSERT(spi_obj);
+	ASSERT(spi_obj->cs_str);
+	ASSERT(spi_obj->init);
+	ASSERT(spi_obj->read);
+	ASSERT(spi_obj->write);
+	
+	spi_cs_ctr = spi_obj->cs_str;
+	spi_read_buf = spi_obj->read;
+	spi_write_buf = spi_obj->write;
+	
 	spi_cs_ctr(0);
 	flash_power_up();
-}  
+} 
+
+
+
+
+
+const __spi_flash_obj spi_flash_obj = {
+   .init    = spi_flash_init,
+   .read_id = flash_read_jedec,
+   .status  = flash_get_status,
+   .read    = flash_read_buf,
+   .write   = flash_write_buf, 
+   .erase   = flash_erase_sectors,
+   .io_ctr  = flash_io_control,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
 void spi_flash_test(void)
 {
 //	u8 unique_id[8];
