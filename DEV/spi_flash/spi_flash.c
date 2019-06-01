@@ -328,7 +328,6 @@ static void spi_flash_init(__spi_ctr_obj *spi_obj)
 	spi_cs_ctr = spi_obj->cs_str;
 	spi_read_buf = spi_obj->read;
 	spi_write_buf = spi_obj->write;
-	
 	spi_cs_ctr(0);
 	flash_power_up();
 	flash_get_sizeKB();

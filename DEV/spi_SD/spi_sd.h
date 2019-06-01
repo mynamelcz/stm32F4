@@ -1,7 +1,8 @@
 #ifndef	__SPI_SD_H
 #define	__SPI_SD_H
 #include "includes.h"
-
+//#include "diskio.h"
+#include "bsp_spi.h"
 /**
   * @brief  Commands: CMDxx = CMD-number | 0x40
   */
@@ -39,7 +40,7 @@
 typedef enum {
 	SD_OFF_LINE = 0,
 	SD_ON_LINE,
-}SD_DEV_STATE;
+}SD_Dev_state;
 
 
 
@@ -49,20 +50,20 @@ typedef enum {
     SD_VER_SDV1,
     SD_VER_SDV2,	// CMD8 是 V2.0 以后有的命令
     SD_VER_SDV3,
-}SD_VERSION_E;
+}SD_Version;
 
 typedef enum {
 	SD_TYPE_UNKNOW,
     SD_TYPE_SDSC,   // <2G 
     SD_TYPE_SDHC,   //  2G ~ 32G
     SD_TYPE_SDXC,   // 32G ~ 2T
-}SD_TYPE_E;
+}SD_Type;
 
 typedef enum {
     SD_VOL_HIGH,    // 2.7~3.6
     SD_VOL_UHS,     // VDD1:2.7~3.6 VDD2:1.7~1.95
     SD_VOL_LVS,     // 2.7~3.6, signal vol:1.7~1.95 
-}SD_VOL_E;
+}SD_Vol;
 
 typedef enum {
     CLASS_0,        // 
@@ -70,12 +71,14 @@ typedef enum {
     CLASS_4,        // >=  4M/S
     CLASS_6,        // >=  6M/S
     CLASS_10,       // >= 10M/S
-}SD_CLASS_E;
+}SD_CLass;
 
 
 typedef enum {
 	SD_NO_ERR,
-}SD_ERR_E;
+	SD_ERR_RES_FAILURE,
+	SD_ERR_TIME_OUT,
+}SD_Error;
 
 typedef struct
 {
@@ -146,7 +149,7 @@ typedef enum
   SD_STATE_RECEIVING              = 0x00000005U,  /*!< SD Receinving State                 */
   SD_STATE_TRANSFER               = 0x00000006U,  /*!< SD Transfert State                  */
   SD_STATE_ERROR                  = 0x0000000FU   /*!< SD is in error state                */
-}SD_STATE_E;
+}SD_State;
 
 typedef enum
 {
@@ -201,12 +204,38 @@ typedef struct
 
 }SD_CardStatusTypeDef;
 
+/** HW INTERFACE **/
+#define SD_CLK_SPEED_SET	SPI_SET_SPEED_CMD
+#define SD_CLK_SPEED_HIGH	SPI_CLK_PRE4		// max:25M
+#define SD_CLK_SPEED_LOW	SPI_CLK_PRE128		// max:400k
+
+
+/*============== SD Respond============*/
+#define	SD_SPI_R1_LEN		1
+#define	SD_SPI_R2_LEN		2
+#define	SD_SPI_R3_LEN		5
+#define	SD_SPI_R7_LEN		5
+typedef enum{	
+	SD_SPI_R1,
+	SD_SPI_R2,
+	SD_SPI_R3,
+	SD_SPI_R7,
+}SD_SPI_Rx_type;
+/** SPI MODE R1 **/
+#define SPI_R1_IDLE_STATE   	BIT(0)
+#define SPI_R1_ERASE_RESET    	BIT(1)
+#define SPI_R1_ILL_CMD      	BIT(2)
+#define SPI_R1_CMD_CRC_ERR  	BIT(3)
+#define SPI_R1_ERASE_ERR   		BIT(4)
+#define SPI_R1_ADDR_ERR		   	BIT(5)
+#define SPI_R1_PARAM_ERR	   	BIT(6)
+#define SPI_R1_ALWAYS_0  	 	BIT(7)
 
 
 typedef struct
 {	
-	SD_TYPE_E   	type;
-	SD_DEV_STATE	dev_state;
+	SD_Type     	type;
+	SD_Dev_state	dev_state;
 	SD_CSD_T 		CSD;
 	SD_CID_T 		CID;
 	
@@ -218,9 +247,21 @@ typedef struct
 
 typedef struct
 {
+	__spi_ctr_obj  *hd_io;
 	__sd_inf_t		sd_inf;
+	
+	SD_Error (*init)(__spi_ctr_obj *hd_io);
+    u32  (*read_id)(void);
+    u32  (*status)(void);
+	void (*read)(u8 *buf, u32 addr, u32 len);
+	void (*write)(const u8 *buf, u32 addr, u32 len);
+	void (*erase)(u32 start_sec, u32 sct_num);
+	bool (*io_ctr)(u8 cmd, void *buff);	
 
 }__spi_sd_obj;
+
+
+extern __spi_sd_obj spi_sd_obj;
 
 #endif
 

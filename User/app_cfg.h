@@ -26,7 +26,7 @@
 
 
 
-////////////////////////////////////////////////////////
+//======= BSP =======//
 #define __DBUG_BSP_SPI
 
 #ifdef __DBUG_BSP_SPI
@@ -37,13 +37,20 @@
 #define spi_puthex(...)	
 #endif
 
+//======= DEV =======//
+#define __DBUG_DEV_SPI_SD
 
+#ifdef __DBUG_DEV_SPI_SD
+#define sd_printf		DBUG_Printf
+#define sd_puthex		DBUG_Put_hex
+#else
+#define sd_printf(...)
+#define sd_puthex(...)	
+#endif
 
-///////////////////////////////////////////////////////
+//======= LIB =======//
 #define __DBUG_FATFS
 #define __DBUG_VFS
-
-
 
 #ifdef __DBUG_FATFS
 #define fs_printf		DBUG_Printf

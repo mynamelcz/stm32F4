@@ -108,9 +108,60 @@ static void spi2_init(void(*cs_fun)(u8))
 }
 
 
+static bool spi1_ioctr(u8 cmd, void *buf)
+{
+	spi_printf("FUN:%s\n",__func__);
+	u8 res = false;
+	u16 dat8  = 0;
+	switch(cmd){
+		case SPI_SET_SPEED_CMD:
+			 dat8 = *((u16 *)(buf));
+			 dat8 %= (SPI_CLK_PRE256+1);
+	         SPI1->CR1 = (u16)((SPI1->CR1 & 0xFFC7)|(dat8<<3));
+		     spi_printf("[SPI1 CLK]:%d KHz\n",84000>>(dat8+1));
+			 res = true;
+			 return res;
+		case SPI_SET_SPEED_LOW:
+	         SPI1->CR1 = (u16)((SPI1->CR1 & 0xFFC7)|SPI_CLK_PRE128<<3);
+		     res = true;
+		     return res;
+		case SPI_SET_SPEED_HIGH:
+	         SPI1->CR1 = (u16)((SPI1->CR1 & 0xFFC7)|SPI_CLK_PRE2<<3);
+		     res = true;
+		     return res;
+		default:
+			break;
+	}
+	
+	spi_printf("[SPI ERR]: spi1_ioctr\n");
+	return res;
+}
 
-
-
+static bool spi2_ioctr(u8 cmd, void *buf)
+{
+	u8 res = false;
+	u16 dat8  = 0;
+	switch(cmd){
+		case SPI_SET_SPEED_CMD:
+			 dat8 = *((u16 *)(buf));
+			 dat8 %= (SPI_CLK_PRE256+1);
+	         SPI2->CR1 = (u16)((SPI2->CR1 & 0xFFC7)|(dat8<<3));
+		     spi_printf("[SPI2 CLK]:%d KHz\n",42000>>(dat8+1));
+			 res = true;
+			 return res;
+		case SPI_SET_SPEED_LOW:
+	         SPI2->CR1 = (u16)((SPI2->CR1 & 0xFFC7)|SPI_CLK_PRE128);
+			 res = true;
+			 return res;
+		case SPI_SET_SPEED_HIGH:
+	         SPI2->CR1 = (u16)((SPI2->CR1 & 0xFFC7)|SPI_CLK_PRE2);
+			 res = true;
+			 return res;
+		default:
+			break;
+	}
+	return res;
+}
 static void spi1_send_buf(const uint8_t *pData, uint32_t Size)
 {
 	HAL_SPI_Transmit(&hspi1, (uint8_t *)pData, Size, HAL_MAX_DELAY);
@@ -145,6 +196,7 @@ __spi_ctr_obj spi1_obj = {
 	.init 	= spi1_init,
 	.read   = spi1_read_buf,
 	.write  = spi1_send_buf,
+	.io_ctr = spi1_ioctr,
 };
 
 __spi_ctr_obj spi2_obj = {
@@ -152,6 +204,7 @@ __spi_ctr_obj spi2_obj = {
 	.init 	= spi2_init,
 	.read   = spi2_read_buf,
 	.write  = spi2_send_buf,
+	.io_ctr = spi2_ioctr,
 };
 
 
