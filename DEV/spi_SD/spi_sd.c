@@ -2,7 +2,8 @@
 #include "bsp_spi.h"
 
 static __spi_sd_obj *this_obj = NULL;
-
+extern void HAL_Delay(u32 Delay);
+#define spi_sd_delay_ms(x)		HAL_Delay(x)
 
 
 
@@ -52,7 +53,7 @@ static u8 sd_cmd(u8 Rx, u8 Cmd, u32 Arg, u8 Crc, u8 *r_buf)
 {
 	u8 retry;
 	u8 cmd_fream[6];
-	
+	u8 r1 = 0xff;
 	SD_Error res = SD_NO_ERR;
 	sd_dis_select();
 	res = sd_select();
@@ -68,27 +69,36 @@ static u8 sd_cmd(u8 Rx, u8 Cmd, u32 Arg, u8 Crc, u8 *r_buf)
 	cmd_fream[4] = (u8)(Arg); 
 	cmd_fream[5] = (Crc | 0x01); 
     
-	sd_printf("SD CMD:");
+	sd_printf("SD CMD%d: ",Cmd);
 	sd_puthex((const char *)cmd_fream,6);
-	this_obj->hd_io->write(cmd_fream, 6);
 	
+	this_obj->hd_io->write(cmd_fream, 6);
 	switch(Rx){
 		case SD_SPI_R1:
-			retry = 10; 
+			retry = 100; 
 			do
 			{
-				this_obj->hd_io->read(r_buf, 1);
+				this_obj->hd_io->read(r_buf, SD_SPI_R1_LEN);
 			}while ((*r_buf & SPI_R1_ALWAYS_0) && --retry); 
 			if(retry == 0){
+				sd_printf("[ERR]: SD_SPI_R1 \n");
 				return 0xff;
 			}
-			return *r_buf;
+			sd_printf("sd_cmd_R1: 0x%x\n", r_buf[0]);
+			res = r_buf[0];
 		case SD_SPI_R2:
 			break;
 		case SD_SPI_R3:
+			 this_obj->hd_io->read(r_buf, SD_SPI_R3_LEN);
+		     sd_printf("sd_cmd_R3:");
+			 sd_puthex((const char *)r_buf, SD_SPI_R3_LEN);
+             res = r_buf[0];		
 			break;
 		case SD_SPI_R7:
 			 this_obj->hd_io->read(r_buf, SD_SPI_R7_LEN);
+		     sd_printf("sd_cmd_R7:");
+			 sd_puthex((const char *)r_buf, SD_SPI_R7_LEN);	
+             res = r_buf[0];		
 			break;
 		default:
 			break;
@@ -96,22 +106,9 @@ static u8 sd_cmd(u8 Rx, u8 Cmd, u32 Arg, u8 Crc, u8 *r_buf)
 	return res;
 }
 
-static u8 sd_cmd_R1(u8 Cmd, u32 Arg, u8 Crc)
-{
-	u8 r1 = 0xff;
-	sd_cmd(SD_SPI_R1, Cmd, Arg, Crc, &r1);
-	sd_printf("sd_cmd_R1: 0x%x\n",r1);
-	return r1;
-}
 
 
-static u8 sd_cmd_R7(u8 Cmd, u32 Arg, u8 Crc)
-{
-	u8 r1 = 0xff;
-	sd_cmd(SD_SPI_R7, Cmd, Arg, Crc, &r1);
-	sd_printf("sd_cmd_R7: 0x%x\n",r1);
-	return r1;
-}
+
 
 static u8 sd_speed_set(u8 speed)
 {
@@ -139,7 +136,6 @@ static SD_Error sd_init(__spi_ctr_obj  *hd_io)
 	ASSERT(hd_io->read);
 	ASSERT(hd_io->write);
 	u8 retry = 0;
-	u8 r1 = 0;
 	u8 sd_tmp_buf[0x10] = {0};
 	SD_Error res = SD_NO_ERR;
 	
@@ -147,21 +143,57 @@ static SD_Error sd_init(__spi_ctr_obj  *hd_io)
 	this_obj->hd_io = hd_io;
 	this_obj->sd_inf.type = SD_TYPE_UNKNOW;	
 	
-	
-	sd_speed_set(SD_CLK_SPEED_HIGH);			// 0:  clk low			
-	this_obj->hd_io->read(sd_tmp_buf, 10);		// 1:  >74  clk
+	/**0: Reset card  >74  clk **/
+	sd_speed_set(SD_CLK_SPEED_LOW);	
+    this_obj->hd_io->cs_str(1);	
+	this_obj->hd_io->read(sd_tmp_buf, 10);
+	/**1: CMD0--> idle mode **/
+	u8 r1 = 0;
 	retry = 10;
-	do{											// 2:  idle mode
-		r1 = sd_cmd_R1(SD_CMD_GO_IDLE_STATE, 0x00, 0x95);
-	}while((r1 != SPI_R1_IDLE_STATE) && --retry);
-	
-	
-	
-	while(1);
+	do{			
+		sd_cmd(SD_SPI_R1, SD_CMD_GO_IDLE_STATE, 0x00, 0x95, &r1);
+	}while((r1 != SPI_R1_IDLE_STATE) && --retry);	
 	if(retry == 0){
+		sd_printf("[SD ERR]: line:%d\n",__LINE__);
 		res = SD_ERR_TIME_OUT;
 		return res;
 	}
+	/**2: CMD8   **/
+	u8 r7_buf[SD_SPI_R7_LEN] = {0};
+	sd_cmd(SD_SPI_R7, SD_CMD_IF_COND, 0x1AA, 0x87, r7_buf);//  check 2.7v~3.6v
+	if(r7_buf[0] & SPI_R1_ILL_CMD){
+	/**3: 不支持CMD8的卡   **/
+		
+		
+	}else if(r7_buf[0] == SPI_R1_IDLE_STATE){
+	/**4: 支持CMD8的卡    **/
+		if(((r7_buf[3]&0xf)==0x01) && (r7_buf[4] == 0xAA)){//check pattern and VOL
+		//  vol check ok 2.7v~3.6v	
+			
+		}else{
+		//  CMD8 is not vaild.
+    /**3: ACMD58   **/
+			u8 r3_buf[SD_SPI_R3_LEN] = {0};
+			sd_cmd(SD_SPI_R3, SD_CMD_READ_OCR, 0x00, 0xff, r3_buf);
+			if(r1 != SPI_R1_IDLE_STATE){
+				sd_printf("[ERR]: line:%d \n",__LINE__);
+				return r1;
+			}
+			while(1){
+				sd_cmd(SD_SPI_R1, SD_CMD_APP_CMD, 0x00, 0xff, &r1);
+			sd_cmd(SD_SPI_R1, SD_ACMD_SEND_OP_COND, 0, 0xff, &r1);
+				spi_sd_delay_ms(500);
+			}
+		    
+			
+		
+		}
+	
+	
+	}
+	
+	while(1);
+
 	
 	
 	

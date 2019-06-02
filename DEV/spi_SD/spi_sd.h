@@ -32,7 +32,8 @@
 #define SD_CMD_UNTAG_ERASE_GROUP      37  /*!< CMD37 = 0x65 */
 #define SD_CMD_ERASE                  38  /*!< CMD38 = 0x66 */
 //------------------------------------------------------------
-#define SD_CMD_SET_CLR_CARD_DETECT    42  /*!< ACMD42= 0x6A */
+#define SD_ACMD_SEND_OP_COND     	  41  /*!< ACMD41 */
+#define SD_ACMD_SET_CLR_CARD_DETECT   42  /*!< ACMD42= 0x6A */
 #define SD_CMD_APP_CMD                55  /*!< CMD55 = 0x77 */
 #define SD_CMD_READ_OCR               58  /*!< CMD58 = 0x7A */
 #define SD_CMD_CRC_ON_OFF             59  /*!< CMD59 = 0x7B */
@@ -207,7 +208,7 @@ typedef struct
 /** HW INTERFACE **/
 #define SD_CLK_SPEED_SET	SPI_SET_SPEED_CMD
 #define SD_CLK_SPEED_HIGH	SPI_CLK_PRE4		// max:25M
-#define SD_CLK_SPEED_LOW	SPI_CLK_PRE128		// max:400k
+#define SD_CLK_SPEED_LOW	SPI_CLK_PRE256		// max:400k
 
 
 /*============== SD Respond============*/
@@ -221,7 +222,7 @@ typedef enum{
 	SD_SPI_R3,
 	SD_SPI_R7,
 }SD_SPI_Rx_type;
-/** SPI MODE R1 **/
+/** SPI MODE R1   8 bits **/
 #define SPI_R1_IDLE_STATE   	BIT(0)
 #define SPI_R1_ERASE_RESET    	BIT(1)
 #define SPI_R1_ILL_CMD      	BIT(2)
@@ -230,6 +231,16 @@ typedef enum{
 #define SPI_R1_ADDR_ERR		   	BIT(5)
 #define SPI_R1_PARAM_ERR	   	BIT(6)
 #define SPI_R1_ALWAYS_0  	 	BIT(7)
+/** SPI MODE R7   40 bits **/
+typedef struct{
+	u8 r1;
+	u8 cmd_version;
+	u8 voltage;
+	u8 check;
+}__sd_spi_r7;
+
+
+
 
 
 typedef struct

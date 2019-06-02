@@ -46,7 +46,7 @@ static void spi_gpio_init(SPI_HandleTypeDef *hspi)
     */
     GPIO_InitStruct.Pin = GPIO_PIN_15|GPIO_PIN_14|GPIO_PIN_13;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -91,8 +91,8 @@ static void spi2_init(void(*cs_fun)(u8))
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
 	
-  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;    			//clk idle state 
-  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;       				 //
+  hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;    			//clk idle state 
+  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;       				 //
   hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;   //clk prescaler
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
