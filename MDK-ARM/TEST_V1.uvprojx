@@ -477,6 +477,11 @@
               <FilePath>..\User\task_manage\task_manage.c</FilePath>
             </File>
             <File>
+              <FileName>dev_manage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\dev_manage\dev_manage.c</FilePath>
+            </File>
+            <File>
               <FileName>common.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\common\common.c</FilePath>
@@ -1075,7 +1080,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F407xx,VECT_TAB_SRAM,USE_FULL_LL_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Lib\RTT;..\User;..\User\task_manage;..\User\cpu_usage;..\User\common;..\User\low_power;..\CPU\SPI;..\DEV\LED;..\DEV\spi_flash;..\CPU\UART;..\Lib\my_print;..\Lib\FATFS;..\Lib\vfs;..\Lib\list;..\Drivers\STM32F4xx_LL_Driver\inc;..\CPU\SYS;..\DEV\spi_SD;..\User\bsp_init</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Lib\RTT;..\User;..\User\task_manage;..\User\cpu_usage;..\User\common;..\User\low_power;..\CPU\SPI;..\DEV\LED;..\DEV\spi_flash;..\CPU\UART;..\Lib\my_print;..\Lib\FATFS;..\Lib\vfs;..\Lib\list;..\Drivers\STM32F4xx_LL_Driver\inc;..\CPU\SYS;..\DEV\spi_SD;..\User\bsp_init;..\User\task_manage</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1213,6 +1218,11 @@
               <FileName>task_manage.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\task_manage\task_manage.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_manage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\dev_manage\dev_manage.c</FilePath>
             </File>
             <File>
               <FileName>common.c</FileName>

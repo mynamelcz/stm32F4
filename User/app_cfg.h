@@ -8,7 +8,7 @@
 #define DBUG_Printf 	printf		// MY_RTT_printf
 #define DBUG_Put_hex 	my_printhex	
 
-
+//======= USER =======//
 #define DBUG_MAIN	
 #define DBUG_TASK_MANAGE
 
