@@ -1,3 +1,4 @@
+
 #include "bsp_sdio.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_ll.h"
@@ -58,63 +59,58 @@ static void sdio_reg_init(void)
     SDIO_Init(SDIO, SDIO_InitStruct);
 }
 
-#define SDIO_DMA_NUM			DMA2
-#define SDIO_DMA_CHL			LL_DMA_CHANNEL_4
-#define SDIO_DMA_DMA_CLK		LL_AHB1_GRP1_PERIPH_DMA2
-#define SDIO_FIFO_PBASE			(u32)(&(SDIO->FIFO))
+static void sdio_init_dma_fifo(void)
+{
+	LL_DMA_EnableFifoMode(SDIO_DMA_NUM, SDIO_DMA_STRAM);	
+    LL_DMA_ConfigFifo(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_FIFOMODE_ENABLE, LL_DMA_FIFOTHRESHOLD_FULL); 
+    LL_DMA_SetMemoryBurstxfer(SDIO_DMA_NUM,SDIO_DMA_STRAM,LL_DMA_MBURST_INC4); 
+    LL_DMA_SetPeriphBurstxfer(SDIO_DMA_NUM,SDIO_DMA_STRAM,LL_DMA_MBURST_INC4);	
+}
 
-#define SDIO_DMA_TX_INT			DMA2_Stream3_IRQn
-#define SDIO_DMA_RX_INT			DMA2_Stream6_IRQn
 
-
-#define SDIO_DMA_USE_FIFO		1
-
-#define SDIO_DMA_TX_STREAM		LL_DMA_STREAM_3
-#define SDIO_DMA_RX_STREAM		LL_DMA_STREAM_6
-
-static void sdio_tx_dma_init(u32 *src_addr, u32 bufferSize)
+/*
+**1. 使用 LL_DMA_MODE_PFCTRL  bufferSize即数据长度无需设置。
+*/
+static void sdio_dma_init(u32 *src_addr, u32 bufferSize, u32 direction)
 {
     /* UART  TX   DMA  configuration   */
 	LL_AHB1_GRP1_EnableClock(SDIO_DMA_DMA_CLK);
-	LL_DMA_DeInit(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM);									
-	while(LL_DMA_IsEnabledStream(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM) != DISABLE){;}
+	
+	LL_DMA_DeInit(SDIO_DMA_NUM, SDIO_DMA_STRAM);									
+	while(LL_DMA_IsEnabledStream(SDIO_DMA_NUM, SDIO_DMA_STRAM) != DISABLE){;}
 	// Select	Chanel
-	LL_DMA_SetChannelSelection(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, SDIO_DMA_CHL);	
+	LL_DMA_SetChannelSelection(SDIO_DMA_NUM, SDIO_DMA_STRAM, SDIO_DMA_CHL);	
 	// Set		Direction		
-	LL_DMA_SetDataTransferDirection(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
+	LL_DMA_SetDataTransferDirection(SDIO_DMA_NUM, SDIO_DMA_STRAM, direction);
 	// Set 		Priority
-	LL_DMA_SetStreamPriorityLevel(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, LL_DMA_PRIORITY_LOW);
+	LL_DMA_SetStreamPriorityLevel(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_PRIORITY_LOW);
 	// Set 		Mode
-	LL_DMA_SetMode(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, LL_DMA_MODE_PFCTRL);
+	LL_DMA_SetMode(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_MODE_PFCTRL);
     // Set 		Inc Mode
-	LL_DMA_SetPeriphIncMode(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, LL_DMA_PERIPH_NOINCREMENT);
-	LL_DMA_SetMemoryIncMode(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, LL_DMA_MEMORY_INCREMENT);
-	// Set 		Dat	Size 
-	LL_DMA_SetPeriphSize(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, LL_DMA_PDATAALIGN_WORD);
-	LL_DMA_SetMemorySize(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, LL_DMA_MDATAALIGN_WORD);
+	LL_DMA_SetPeriphIncMode(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_PERIPH_NOINCREMENT);
+	LL_DMA_SetMemoryIncMode(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_MEMORY_INCREMENT);
+	// Set 		Dat	weth 
+	LL_DMA_SetPeriphSize(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_PDATAALIGN_WORD);
+	LL_DMA_SetMemorySize(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_MDATAALIGN_WORD);
 	// Set 		Address 
-	LL_DMA_SetPeriphAddress(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, SDIO_FIFO_PBASE);
-	LL_DMA_SetMemoryAddress(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, (u32)src_addr);
+	LL_DMA_SetPeriphAddress(SDIO_DMA_NUM, SDIO_DMA_STRAM, SDIO_FIFO_PBASE);
+	LL_DMA_SetMemoryAddress(SDIO_DMA_NUM, SDIO_DMA_STRAM, (u32)src_addr);
+	// Set 		Dat Len 
+	LL_DMA_SetDataLength(SDIO_DMA_NUM, SDIO_DMA_STRAM, bufferSize);
 		
 #if(SDIO_DMA_USE_FIFO)
-	LL_DMA_EnableFifoMode(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM);	
-    LL_DMA_ConfigFifo(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM, LL_DMA_FIFOMODE_ENABLE, LL_DMA_FIFOTHRESHOLD_FULL); 
-    LL_DMA_SetMemoryBurstxfer(SDIO_DMA_NUM,SDIO_DMA_TX_STREAM,LL_DMA_MBURST_INC4); 
-    LL_DMA_SetPeriphBurstxfer(SDIO_DMA_NUM,SDIO_DMA_TX_STREAM,LL_DMA_MBURST_INC4);		
+	sdio_init_dma_fifo();
 #else
-	LL_DMA_DisableFifoMode(SDIO_DMA_NUM, UART1_DMA_TX_STREAM);	
+	LL_DMA_DisableFifoMode(SDIO_DMA_NUM, SDIO_DMA_STRAM);	
 #endif	
-	LL_DMA_EnableStream(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM);
-	while(LL_DMA_IsEnabledStream(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM) != ENABLE){;}
+	LL_DMA_EnableStream(SDIO_DMA_NUM, SDIO_DMA_STRAM);
+	while(LL_DMA_IsEnabledStream(SDIO_DMA_NUM, SDIO_DMA_STRAM) != ENABLE){;}
     /*************          END        **************/
-
-
-
 }	
-static void sdio_rx_dma_init(void)
-{
 
-}
+
+
+
 
 static void sdio_intterrupt_init(void)
 {
@@ -123,15 +119,12 @@ static void sdio_intterrupt_init(void)
 	NVIC_EnableIRQ(SDIO_IRQn);
 	
 	/* DMA  INT	configuration   */
-	LL_DMA_ClearFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM);
-	LL_DMA_EnableIT_TC(SDIO_DMA_NUM, SDIO_DMA_TX_STREAM);	
-	NVIC_SetPriority(SDIO_DMA_TX_INT, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 1));
-	NVIC_EnableIRQ(SDIO_DMA_TX_INT);	
+	LL_DMA_ClearFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM);
+	LL_DMA_EnableIT_TC(SDIO_DMA_NUM, SDIO_DMA_STRAM);	
+	NVIC_SetPriority(SDIO_DMA_STRAM, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 1));
+	NVIC_EnableIRQ(SDIO_DMA_STRAM);	
 
-	LL_DMA_ClearFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_RX_STREAM);
-	LL_DMA_EnableIT_TC(SDIO_DMA_NUM, SDIO_DMA_RX_STREAM);
-	NVIC_SetPriority(SDIO_DMA_RX_INT, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 1));
-	NVIC_EnableIRQ(SDIO_DMA_RX_INT);	
+
 }
 
 static void sdio_init(void)
