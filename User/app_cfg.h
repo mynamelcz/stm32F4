@@ -27,15 +27,17 @@
 
 
 //======= BSP =======//
-#define __DBUG_BSP_SPI
 
-#ifdef __DBUG_BSP_SPI
-#define spi_printf		DBUG_Printf
-#define spi_puthex		DBUG_Put_hex
+#define __DBUG_BSP
+
+#ifdef __DBUG_BSP
+#define bsp_printf		DBUG_Printf
+#define bsp_puthex		DBUG_Put_hex
 #else
-#define spi_printf(...)
-#define spi_puthex(...)	
+#define bsp_printf(...)
+#define bsp_puthex(...)	
 #endif
+
 
 //======= DEV =======//
 #define __DBUG_DEV_SPI_SD
@@ -46,6 +48,16 @@
 #else
 #define sd_printf(...)
 #define sd_puthex(...)	
+#endif
+
+#define __DBUG_SPI_FLASH
+
+#ifdef __DBUG_SPI_FLASH
+#define flash_printf		DBUG_Printf
+#define flash_puthex		DBUG_Put_hex
+#else
+#define flash_printf(...)
+#define flash_puthex(...)	
 #endif
 
 //======= LIB =======//

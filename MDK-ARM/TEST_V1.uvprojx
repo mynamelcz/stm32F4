@@ -436,6 +436,11 @@
               <FileType>1</FileType>
               <FilePath>..\CPU\SYS\bsp_sys.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_sdio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\CPU\SDIO\bsp_sdio.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -536,11 +541,6 @@
               <FileType>1</FileType>
               <FilePath>../Src/stm32f4xx_it.c</FilePath>
             </File>
-            <File>
-              <FileName>stm32f4xx_hal_msp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Src/stm32f4xx_hal_msp.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -585,6 +585,11 @@
               <FileName>stm32f4xx_ll_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Drivers\STM32F4xx_LL_Driver\src\stm32f4xx_ll_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_ll_sdmmc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32F4xx_LL_Driver\src\stm32f4xx_ll_sdmmc.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -675,6 +680,11 @@
               <FileName>stm32f4xx_hal_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_sd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_sd.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1080,7 +1090,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F407xx,VECT_TAB_SRAM,USE_FULL_LL_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Lib\RTT;..\User;..\User\task_manage;..\User\cpu_usage;..\User\common;..\User\low_power;..\CPU\SPI;..\DEV\LED;..\DEV\spi_flash;..\CPU\UART;..\Lib\my_print;..\Lib\FATFS;..\Lib\vfs;..\Lib\list;..\Drivers\STM32F4xx_LL_Driver\inc;..\CPU\SYS;..\DEV\spi_SD;..\User\bsp_init;..\User\task_manage</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Lib\RTT;..\User;..\User\task_manage;..\User\cpu_usage;..\User\common;..\User\low_power;..\CPU\SPI;..\DEV\LED;..\DEV\spi_flash;..\CPU\UART;..\Lib\my_print;..\Lib\FATFS;..\Lib\vfs;..\Lib\list;..\Drivers\STM32F4xx_LL_Driver\inc;..\CPU\SYS;..\DEV\spi_SD;..\User\bsp_init;..\User\task_manage;..\CPU\SDIO</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1178,6 +1188,11 @@
               <FileName>bsp_sys.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\CPU\SYS\bsp_sys.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_sdio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\CPU\SDIO\bsp_sdio.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1279,11 +1294,6 @@
               <FileType>1</FileType>
               <FilePath>../Src/stm32f4xx_it.c</FilePath>
             </File>
-            <File>
-              <FileName>stm32f4xx_hal_msp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../Src/stm32f4xx_hal_msp.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -1328,6 +1338,11 @@
               <FileName>stm32f4xx_ll_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Drivers\STM32F4xx_LL_Driver\src\stm32f4xx_ll_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_ll_sdmmc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32F4xx_LL_Driver\src\stm32f4xx_ll_sdmmc.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1418,6 +1433,11 @@
               <FileName>stm32f4xx_hal_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_sd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_sd.c</FilePath>
             </File>
           </Files>
         </Group>

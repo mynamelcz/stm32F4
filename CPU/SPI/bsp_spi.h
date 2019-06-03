@@ -24,6 +24,7 @@ typedef struct{
 	void (*cs_str)(u8 en);
 	void (*read)(u8 *buf, u32 len);
 	void (*write)(const u8 *buf, u32 len);
+	u8   (*w_r_byte)(u8 dat);
     bool (*io_ctr)(u8 cmd, void *buf);	
 }__spi_ctr_obj;
 

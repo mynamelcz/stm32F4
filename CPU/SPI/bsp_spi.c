@@ -1,55 +1,53 @@
 #include "bsp_spi.h"
-#include "stm32f4xx_hal.h"
-//#include "stm32f4xx_ll.h"
+#include "stm32f4xx_ll.h"
+
+#define SPI_TIME_OUT_CNT	1000
 
 
-SPI_HandleTypeDef hspi1;
-SPI_HandleTypeDef hspi2;
-DMA_HandleTypeDef hdma_spi1_rx;
-DMA_HandleTypeDef hdma_spi1_tx;
 
 static void spi_err_callback(u16 line)
 {
-	spi_printf("BSP SPI ERR !!!!\n");
-	spi_printf("ERR LINE: %d\n",line);
+	bsp_printf("BSP SPI ERR !!!!\n");
+	bsp_printf("ERR LINE: %d\n",line);
 	while(1);
 }
 
 
 
 
-static void spi_gpio_init(SPI_HandleTypeDef *hspi)
+static void spi_gpio_init(SPI_TypeDef *hspi)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(hspi->Instance==SPI1)
+  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+  if(hspi == SPI1)
   {
-    __HAL_RCC_SPI1_CLK_ENABLE();
     /**SPI1 GPIO Configuration    
     PB5     ------> SPI1_MOSI
     PB4     ------> SPI1_MISO
     PB3     ------> SPI1_SCK 
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_4|GPIO_PIN_3;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	  GPIO_InitStruct.Pin = LL_GPIO_PIN_3 |LL_GPIO_PIN_4|LL_GPIO_PIN_5;
+	  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+	  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+	  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+	  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+	  GPIO_InitStruct.Alternate = LL_GPIO_AF_5;
+	  LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
   }
-  if(hspi->Instance==SPI2)
+  if(hspi == SPI2)
   {
-    __HAL_RCC_SPI2_CLK_ENABLE();
-    /**SPI1 GPIO Configuration    
+
+    /**SPI2 GPIO Configuration    
     PB15     ------> SPI2_MOSI
     PB14     ------> SPI2_MISO
     PB13     ------> SPI2_SCK 
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_15|GPIO_PIN_14|GPIO_PIN_13;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	  GPIO_InitStruct.Pin = LL_GPIO_PIN_13 |LL_GPIO_PIN_14|LL_GPIO_PIN_15;
+	  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+	  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+	  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+	  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+	  GPIO_InitStruct.Alternate = LL_GPIO_AF_5;
+	  LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
   }
 
 }
@@ -59,58 +57,62 @@ static void spi1_init(void(*cs_fun)(u8))
   ASSERT(cs_fun);
   spi1_obj.cs_str = cs_fun;
 	
-  hspi1.Instance = SPI1;
-  hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-	
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;    			//clk idle state 
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;       				 //
-  hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;   //clk prescaler
-  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;			        //time out close
-  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi1.Init.CRCPolynomial = 7;
-  spi_gpio_init(&hspi1);
-  if (HAL_SPI_Init(&hspi1) != HAL_OK)
-  {
-	spi_err_callback(__LINE__);
-  }
-  __HAL_SPI_ENABLE(&hspi1);
+  LL_SPI_InitTypeDef SPI_InitStruct = {0};
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SPI1);
+  
+  spi_gpio_init(SPI1);
+
+  SPI_InitStruct.TransferDirection = LL_SPI_FULL_DUPLEX;
+  SPI_InitStruct.Mode = LL_SPI_MODE_MASTER;
+  SPI_InitStruct.DataWidth = LL_SPI_DATAWIDTH_8BIT;
+  SPI_InitStruct.ClockPolarity = LL_SPI_POLARITY_LOW;
+  SPI_InitStruct.ClockPhase = LL_SPI_PHASE_1EDGE;
+  SPI_InitStruct.NSS = LL_SPI_NSS_SOFT;
+  SPI_InitStruct.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV2;
+  SPI_InitStruct.BitOrder = LL_SPI_MSB_FIRST;
+  SPI_InitStruct.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
+  SPI_InitStruct.CRCPoly = 10;
+  LL_SPI_Init(SPI1, &SPI_InitStruct);
+  LL_SPI_SetStandard(SPI1, LL_SPI_PROTOCOL_MOTOROLA);
+
+  LL_SPI_Enable(SPI1);
+
+
 }
 
 
 
 static void spi2_init(void(*cs_fun)(u8))
 {
-
+  ASSERT(cs_fun);
   spi2_obj.cs_str = cs_fun;
-  hspi2.Instance = SPI2;
-  hspi2.Init.Mode = SPI_MODE_MASTER;
-  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-	
-  hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;    			//clk idle state 
-  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;       				 //
-  hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;   //clk prescaler
-  hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;			        //time out close
-  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi2.Init.CRCPolynomial = 7;
-  spi_gpio_init(&hspi2);
-  if (HAL_SPI_Init(&hspi2) != HAL_OK)
-  {
-	spi_err_callback(__LINE__);
-  }
-  __HAL_SPI_ENABLE(&hspi2);
+
+  LL_SPI_InitTypeDef SPI_InitStruct = {0};
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_SPI2);
+  
+  spi_gpio_init(SPI2);  
+  
+  SPI_InitStruct.TransferDirection = LL_SPI_FULL_DUPLEX;
+  SPI_InitStruct.Mode = LL_SPI_MODE_MASTER;
+  SPI_InitStruct.DataWidth = LL_SPI_DATAWIDTH_8BIT;
+  SPI_InitStruct.ClockPolarity = LL_SPI_POLARITY_LOW;
+  SPI_InitStruct.ClockPhase = LL_SPI_PHASE_1EDGE;
+  SPI_InitStruct.NSS = LL_SPI_NSS_SOFT;
+  SPI_InitStruct.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV2;
+  SPI_InitStruct.BitOrder = LL_SPI_MSB_FIRST;
+  SPI_InitStruct.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
+  SPI_InitStruct.CRCPoly = 10;
+  LL_SPI_Init(SPI2, &SPI_InitStruct);
+  LL_SPI_SetStandard(SPI2, LL_SPI_PROTOCOL_MOTOROLA);
+
+  LL_SPI_Enable(SPI2);
+
 }
 
 
 static bool spi1_ioctr(u8 cmd, void *buf)
 {
-	spi_printf("FUN:%s\n",__func__);
+	bsp_printf("FUN:%s\n",__func__);
 	u8 res = false;
 	u16 dat8  = 0;
 	switch(cmd){
@@ -118,7 +120,7 @@ static bool spi1_ioctr(u8 cmd, void *buf)
 			 dat8 = *((u16 *)(buf));
 			 dat8 %= (SPI_CLK_PRE256+1);
 	         SPI1->CR1 = (u16)((SPI1->CR1 & 0xFFC7)|(dat8<<3));
-		     spi_printf("[SPI1 CLK]:%d KHz\n",84000>>(dat8+1));
+		     bsp_printf("[SPI1 CLK]:%d KHz\n",84000>>(dat8+1));
 			 res = true;
 			 return res;
 		case SPI_SET_SPEED_LOW:
@@ -133,7 +135,7 @@ static bool spi1_ioctr(u8 cmd, void *buf)
 			break;
 	}
 	
-	spi_printf("[SPI ERR]: spi1_ioctr\n");
+	bsp_printf("[SPI ERR]: spi1_ioctr\n");
 	return res;
 }
 
@@ -146,7 +148,7 @@ static bool spi2_ioctr(u8 cmd, void *buf)
 			 dat8 = *((u16 *)(buf));
 			 dat8 %= (SPI_CLK_PRE256+1);
 	         SPI2->CR1 = (u16)((SPI2->CR1 & 0xFFC7)|(dat8<<3));
-		     spi_printf("[SPI2 CLK]:%d KHz\n",42000>>(dat8+1));
+		     bsp_printf("[SPI2 CLK]:%d KHz\n",21000>>(dat8+1));
 			 res = true;
 			 return res;
 		case SPI_SET_SPEED_LOW:
@@ -162,32 +164,80 @@ static bool spi2_ioctr(u8 cmd, void *buf)
 	}
 	return res;
 }
-static void spi1_send_buf(const uint8_t *pData, uint32_t Size)
+
+
+
+static u8 spi1_send_read_byte(u8 dat)
 {
-	HAL_SPI_Transmit(&hspi1, (uint8_t *)pData, Size, HAL_MAX_DELAY);
-
-
+	u32 t_cnt = SPI_TIME_OUT_CNT;
+	while (((SPI1->SR & SPI_SR_TXE) == RESET)&&(--t_cnt));
+	if(t_cnt == 0){
+		spi_err_callback(__LINE__);
+	}
+	t_cnt = SPI_TIME_OUT_CNT;
+	SPI1->DR = dat;
+	while (((SPI1->SR & SPI_SR_RXNE) == RESET)&&(--t_cnt));
+	if(t_cnt == 0){
+		spi_err_callback(__LINE__);
+	}
+	return (u8)(SPI1->DR);	
 }
+
+
+
+static void spi1_send_buf(const u8 *pData, uint32_t Size)
+{
+	const u8 *ptr = pData;
+	while(Size--){
+		spi1_send_read_byte(*ptr++);
+	}
+}
+
 static void spi1_read_buf(uint8_t *pData, uint32_t Size)
 {
-
-	if(HAL_SPI_Receive(&hspi1, pData, Size, HAL_MAX_DELAY) != HAL_OK){
-		spi_printf("BSP SPI ERR spi1_read_buf!!!!\n");
+	u8 *ptr = pData;
+	while(Size--){
+		*ptr++ = spi1_send_read_byte(0xff);
 	}
 }
 
-static void spi2_send_buf(const uint8_t *pData, uint32_t Size)
+
+
+
+static u8 spi2_send_read_byte(u8 dat)
 {
-	HAL_SPI_Transmit(&hspi2, (uint8_t *)pData, Size, HAL_MAX_DELAY);
-
-
+	u32 t_cnt = SPI_TIME_OUT_CNT;
+	while (((SPI2->SR & SPI_SR_TXE) == RESET)&&(--t_cnt));
+	if(t_cnt == 0){
+		spi_err_callback(__LINE__);
+	}
+	t_cnt = SPI_TIME_OUT_CNT;
+	SPI2->DR = dat;
+	while (((SPI2->SR & SPI_SR_RXNE) == RESET)&&(--t_cnt));
+	if(t_cnt == 0){
+		spi_err_callback(__LINE__);
+	}
+	return (u8)(SPI2->DR);	
 }
+
+
+
+static void spi2_send_buf(const u8 *pData, uint32_t Size)
+{
+	const u8 *ptr = pData;
+	while(Size--){
+		spi2_send_read_byte(*ptr++);
+	}
+}
+
 static void spi2_read_buf(uint8_t *pData, uint32_t Size)
 {
-	if(HAL_SPI_Receive(&hspi2, pData, Size, HAL_MAX_DELAY) != HAL_OK){
-		spi_printf("BSP SPI ERR spi1_read_buf!!!!\n");
+	u8 *ptr = pData;
+	while(Size--){
+		*ptr++ = spi2_send_read_byte(0xff);
 	}
 }
+
 
 
 
@@ -196,6 +246,7 @@ __spi_ctr_obj spi1_obj = {
 	.init 	= spi1_init,
 	.read   = spi1_read_buf,
 	.write  = spi1_send_buf,
+	.w_r_byte = spi1_send_read_byte,
 	.io_ctr = spi1_ioctr,
 };
 
@@ -204,6 +255,7 @@ __spi_ctr_obj spi2_obj = {
 	.init 	= spi2_init,
 	.read   = spi2_read_buf,
 	.write  = spi2_send_buf,
+	.w_r_byte = spi2_send_read_byte,
 	.io_ctr = spi2_ioctr,
 };
 
