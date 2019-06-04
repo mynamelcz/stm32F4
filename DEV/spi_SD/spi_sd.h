@@ -3,6 +3,20 @@
 #include "includes.h"
 //#include "diskio.h"
 #include "bsp_spi.h"
+
+/**
+  * @brief  Start Data tokens:
+  *         Tokens (necessary because at nop/idle (and CS active) only 0xff is
+  *         on the data/command line)
+  */
+#define SD_START_DATA_SINGLE_BLOCK_READ    0xFE  /*!< Data token start byte, Start Single Block Read */
+#define SD_START_DATA_MULTIPLE_BLOCK_READ  0xFE  /*!< Data token start byte, Start Multiple Block Read */
+#define SD_START_DATA_SINGLE_BLOCK_WRITE   0xFE  /*!< Data token start byte, Start Single Block Write */
+#define SD_START_DATA_MULTIPLE_BLOCK_WRITE 0xFC  /*!< Data token start byte, Start Multiple Block Write */
+#define SD_STOP_DATA_MULTIPLE_BLOCK_WRITE  0xFD  /*!< Data toke stop byte, Stop Multiple Block Write */
+
+
+
 /**
   * @brief  Commands: CMDxx = CMD-number | 0x40
   */
@@ -45,16 +59,11 @@ typedef enum {
 
 
 
-typedef enum {
-	SD_VER_UNKNOW,
-    SD_VER_MMC3,
-    SD_VER_SDV1,
-    SD_VER_SDV2,	// CMD8 是 V2.0 以后有的命令
-    SD_VER_SDV3,
-}SD_Version;
 
 typedef enum {
 	SD_TYPE_UNKNOW,
+	SD_TYPE_MMC3,
+	SD_TYPE_V1_X,
     SD_TYPE_SDSC,   // <2G 
     SD_TYPE_SDHC,   //  2G ~ 32G
     SD_TYPE_SDXC,   // 32G ~ 2T
@@ -77,8 +86,16 @@ typedef enum {
 
 typedef enum {
 	SD_NO_ERR,
+    SD_ERR_CHECK_V1,
+    SD_ERR_CHECK_V2V3,
+	SD_ERR_SET_BLOCK_SIZE,
+    SD_ERR_CHECK_TOKEN,
+	SD_ERR_GET_CSD,
 	SD_ERR_RES_FAILURE,
+    SD_ERR_ACTIVE_CARD,
 	SD_ERR_TIME_OUT,
+    SD_ERR_CHECK_VOL,
+    SD_ERR_GO_IDLE,
 }SD_Error;
 
 typedef struct
@@ -112,7 +129,7 @@ typedef struct
   volatile u8  WriteBlockPaPartial;  /*!< Partial blocks for write allowed      */
   volatile u8  Reserved3;            /*!< Reserved                              */
   volatile u8  ContentProtectAppli;  /*!< Content protection application        */
-  volatile u8  FileFormatGrouop;     /*!< File format group                     */
+  volatile u8  FileFormatGroup;     /*!< File format group                     */
   volatile u8  CopyFlag;             /*!< Copy flag (OTP)                       */
   volatile u8  PermWrProtect;        /*!< Permanent write protection            */
   volatile u8  TempWrProtect;        /*!< Temporary write protection            */
@@ -217,10 +234,10 @@ typedef struct
 #define	SD_SPI_R3_LEN		5
 #define	SD_SPI_R7_LEN		5
 typedef enum{	
-	SD_SPI_R1,
-	SD_SPI_R2,
-	SD_SPI_R3,
-	SD_SPI_R7,
+	SD_SPI_R1 = 1,
+	SD_SPI_R2 = 2,
+	SD_SPI_R3 = 3,
+	SD_SPI_R7 = 7,
 }SD_SPI_Rx_type;
 /** SPI MODE R1   8 bits **/
 #define SPI_R1_IDLE_STATE   	BIT(0)
@@ -249,8 +266,8 @@ typedef struct
 	SD_Dev_state	dev_state;
 	SD_CSD_T 		CSD;
 	SD_CID_T 		CID;
-	
-	u32 			block_sz;
+     u64   capacity;  /*!< Card Capacity */
+	 u32 	block_sz;
 	
 }__sd_inf_t;
 
