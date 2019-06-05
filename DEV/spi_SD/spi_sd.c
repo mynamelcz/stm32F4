@@ -5,7 +5,7 @@ static __spi_sd_obj *this_obj = NULL;
 extern void HAL_Delay(u32 Delay);
 #define spi_sd_delay_ms(x)		HAL_Delay(x)
 
-#define MAX_RETRY_TIME			0x20
+#define MAX_RETRY_TIME			0xff
 #define HOST_SUPPORT_HIGH_CAP	1		//if host supports high capacity HCS=1, else HCS = 0 
 #define SD_BLOCK_SIZE			512
 
@@ -30,8 +30,8 @@ static u8 sd_wait_ready(void)
     do{  
 		this_obj->hd_io->read(&dat, 1);
         if(dat == 0xff)return 0;
-		sd_printf("sd wait:0x%x t:%d\n",dat, t);
-    }while(++t < MAX_RETRY_TIME);
+		//sd_printf("sd wait:0x%x t:%d\n",dat, t);
+    }while(++t < 0xffff);
 	sd_printf("[SD ERR]:SD_ERR_TIME_OUT\n");
     return 0xff;  
 }  
@@ -85,6 +85,9 @@ static u8 sd_cmd_r1(u8 Cmd, u32 Arg, u8 Crc)
 	}
 	return r1;
 }
+
+
+
 
 static u8 sd_cmd(u8 Rx, u8 Cmd, u32 Arg, u8 Crc, u8 *r_buf)
 {
@@ -429,49 +432,117 @@ static SD_Error sd_idle_mode(void)
 	   b. addr  在SDHC中以(block) 512-byte为单位, 
 		    	在SDSC中以byte为单位。
 */
-static u8 sd_read_single_blk(u8* buf, u32 addr, u16 blk_sz)
+static u8 sd_read_blk(u8 *buf, u32 addr, u16 blk_sz, u16 blk_bum)
 {
+	ASSERT(buf);
+	u32 retry = MAX_RETRY_TIME;
 	u8 res = 0xff;
 	u16 crc = 0;
-	sd_cmd(SD_SPI_R1, SD_CMD_READ_SINGLE_BLOCK, addr, 0xFF, &res);
-	if(res != 0){
-		return res;
-	}
-	res = sd_check_res_token(SD_START_DATA_SINGLE_BLOCK_READ);
-	if(res == SD_NO_ERR){
-		this_obj->hd_io->read(buf,blk_sz);
-	    this_obj->hd_io->read((u8 *)(&crc),sizeof(crc));
-	}
-	return res;
+	u8 *ptr = buf;
+	if(blk_bum ==1){
+		sd_cmd(SD_SPI_R1, SD_CMD_READ_SINGLE_BLOCK, addr, 0xFF, &res);
+		if(res != 0){
+			sd_printf("[SD ERR]: line：%d \n",__LINE__);
+			return res;
+		}
+		res = sd_check_res_token(SD_START_DATA_SINGLE_BLOCK_READ);
+		if(res == SD_NO_ERR){
+			this_obj->hd_io->read(buf,blk_sz);
+			this_obj->hd_io->read((u8 *)(&crc),sizeof(crc));
+		}
+		sd_dis_select();
+		return res;	
+	}else if(blk_bum > 1){
 	
+		sd_cmd(SD_SPI_R1, SD_CMD_READ_MULTIPLE_BLOCK, addr, 0xFF, &res);
+		if(res != 0){
+			sd_printf("[SD ERR]: line：%d \n",__LINE__);
+			return res;
+		}
+		while(blk_bum--){
+			res = sd_check_res_token(SD_START_DATA_MULTIPLE_BLOCK_READ);
+			if(res == SD_NO_ERR){
+				this_obj->hd_io->read(ptr,blk_sz);
+				this_obj->hd_io->read((u8 *)(&crc),sizeof(crc));
+				ptr += blk_sz;
+			}else{
+				sd_printf("[SD ERR]: line：%d \n",__LINE__);
+			}
+		}
+		do{
+			sd_cmd(SD_SPI_R1, SD_CMD_STOP_TRANSMISSION, 0x00, 0xFF, &res);
+		}while((res==0)&&(--retry));		// res:0 indicate sd is not busy
+		if(retry == 0){
+			sd_printf("[SD ERR]: line：%d \n",__LINE__);
+			res = 0xff;
+		}
+		sd_dis_select();
+		return res;	
+	}else{;}
+	return res;	
 }
-static void sd_read_multi_blks(u8* buf, u32 addr, u16 blk_bum)
-{
-//	u8 res = 0xff;
-//	u16 crc = 0;
-//	sd_cmd(SD_SPI_R1, SD_CMD_READ_MULTIPLE_BLOCK, addr, 0xFF, &res);
-//	if(res != 0){
-//		return res;
-//	}
-//	res = sd_check_res_token(SD_START_DATA_SINGLE_BLOCK_READ);
-//	if(res == SD_NO_ERR){
-//		this_obj->hd_io->read(buf,blk_sz);
-//	    this_obj->hd_io->read((u8 *)(&crc),sizeof(crc));
-//	}
-//	return res;
 
-}
-static void sd_write_single_blk(const u8 *buf, u32 addr, u32 len)
+
+static u8 sd_write_blk(u8 *buf, u32 addr, u16 blk_sz, u16 blk_bum)
 {
 	ASSERT(buf);
-	u8 r1 = 0xff;
-	sd_cmd(SD_SPI_R1, SD_CMD_WRITE_SINGLE_BLOCK, 0, 0xFF, &r1);
-}
-
-static void sd_write_multi_blks(u8 *buf, u32 addr, u32 len)
-{
-	ASSERT(buf);
-
+	u8 res = 0xff;
+	u8 data_res = 0;
+	u16 crc = 0xffff;
+    u8 *ptr = buf;
+	if(blk_bum==1){
+		sd_cmd(SD_SPI_R1, SD_CMD_WRITE_SINGLE_BLOCK, addr, 0xFF, &res);		//CMD24
+		if(res != 0){
+			sd_printf("[SD ERR]: line：%d \n",__LINE__);
+			return res;
+		}	
+		this_obj->hd_io->w_r_byte(SD_START_DATA_SINGLE_BLOCK_WRITE);		//token
+		this_obj->hd_io->write(buf, blk_sz);								//data
+		this_obj->hd_io->write((u8 *)(&crc),sizeof(crc));					//crc
+		this_obj->hd_io->read(&data_res , 1);								//data res
+		if(data_res & 0x5){
+			res = 0;	
+		}else{
+			sd_printf("[SD ERR]: line：%d \n",__LINE__);
+			sd_printf("data_res：0x%x \n",data_res);
+			res = 0xff;				
+		}
+		sd_dis_select();
+		return res;
+		
+	}else if(blk_bum >1){
+		sd_cmd(SD_SPI_R1, SD_CMD_WRITE_MULTIPLE_BLOCK, 0, 0xFF, &res);
+		if(res != 0){
+			sd_printf("[SD ERR]: line：%d \n",__LINE__);
+			return res;
+		}
+		while(blk_bum--){
+		
+			this_obj->hd_io->w_r_byte(SD_START_DATA_MULTIPLE_BLOCK_WRITE);		//token
+			this_obj->hd_io->write(ptr, blk_sz);								//data
+			this_obj->hd_io->write((u8 *)(&crc),sizeof(crc));					//crc
+			this_obj->hd_io->read(&data_res , 1);								//data res
+			ptr += blk_sz;		
+			if(data_res & 0x5){
+				res = 0;	
+			}else{
+				sd_printf("[SD ERR]: line：%d \n",__LINE__);
+				sd_printf("data_res：0x%x \n",data_res);
+				res = 0xff;	
+				break;
+			}
+			res=sd_wait_ready();
+			if(res){
+				break;
+			}
+		}
+        this_obj->hd_io->w_r_byte(SD_STOP_DATA_MULTIPLE_BLOCK_WRITE);		   //token
+		sd_dis_select();
+		return res;
+	}else{
+	
+	}
+	return 0;
 }
 /*============	end	=============*/
 
@@ -557,7 +628,7 @@ static SD_Error sd_identification(void)
 }
 
 
-
+	u8 sd_buf[512*4] = {0};
 static SD_Error sd_init(__spi_ctr_obj  *hd_io)
 {
 	sd_printf("FUN:%s\n",__func__);
@@ -570,7 +641,6 @@ static SD_Error sd_init(__spi_ctr_obj  *hd_io)
 	this_obj->hd_io = hd_io;
 	this_obj->sd_inf.type = SD_TYPE_UNKNOW;	
    
-	
     res = sd_identification();
 	
 	if(res != SD_NO_ERR){
@@ -592,13 +662,22 @@ static SD_Error sd_init(__spi_ctr_obj  *hd_io)
 	
     sd_getcard_inf(&this_obj->sd_inf);
 	
-	u8 sd_buf[512] = {0};
+
 	
-	sd_read_single_blk(sd_buf, 0, 512);
+
+	//sd_read_single_block(sd_buf, 0, 512);
 	
-	sd_puthex((const char *)sd_buf,512);
+	//sd_read_multi_blocks(sd_buf, 1, 512, 1);
+//		sd_read_multi_blocks(sd_buf, 0, 512, 2);
+//	sd_puthex((const char *)sd_buf,512*2);
+//	u16 i = 0;
+//	for(i=0;i<=0xff*4;i++){
+//		sd_buf[i] = 0xbb;
+//	}
+//  	sd_write_blk(sd_buf,0,512,4);
 	
-	
+	sd_read_blk(sd_buf, 0, 512, 4);
+	sd_puthex((const char *)sd_buf,512*4);	
 	while(1);
 	
 	
