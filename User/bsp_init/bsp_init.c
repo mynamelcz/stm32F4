@@ -60,9 +60,13 @@ static void flash_cs_ctr(u8 en)
 /** ============  SPI SD   =========== **/
 static void spi_sd_bsp_init(void)
 {
+	u8 res = 0;
 	spi_sd_cs_gpio_init();
     spi2_obj.init(spi_sd_cs_ctr);
-	spi_sd_obj.init(&spi2_obj);
+	res = spi_sd_obj.init(&spi2_obj);
+	if(res){
+		bsp_printf("[ERR] spi_sd_bsp_init err\n");
+	}
 }
 
 static void spi_sd_cs_gpio_init(void)

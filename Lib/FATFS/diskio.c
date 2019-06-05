@@ -10,7 +10,7 @@
 
 #include "diskio.h"		/* Declarations of disk functions */
 #include "spi_flash.h"
-
+#include "spi_sd.h"
 
 
 
@@ -30,11 +30,18 @@ DSTATUS disk_status (
 	case DEV_FLASH:
 		if(spi_flash_obj.status()){
 			stat &= ~STA_NOINIT;
+		}else{
+			fs_printf("[%d][%s EER]\n",__LINE__,__FUNCTION__);
 		}
 		return stat;
 	case DEV_RAM :
 		return stat;
 	case DEV_MMC :
+		if(spi_sd_obj.status()){
+			stat &= ~STA_NOINIT;
+		}else{
+			fs_printf("[%d][%s EER]\n",__LINE__,__FUNCTION__);
+		}
 		return stat;
 	case DEV_USB :
 		return stat;
@@ -55,11 +62,18 @@ DSTATUS disk_initialize (
 	//  spi_flash_obj.init();
 		if(spi_flash_obj.status()){
 			stat &= ~STA_NOINIT;
+		}else{
+			fs_printf("[%d][%s EER]\n",__LINE__,__FUNCTION__);
 		}
 		return stat;
 	case DEV_RAM :
 		return stat;
 	case DEV_MMC :
+		if(spi_sd_obj.status()){
+			stat &= ~STA_NOINIT;
+		}else{
+			fs_printf("[%d][%s EER]\n",__LINE__,__FUNCTION__);
+		}
 		return stat;
 	case DEV_USB :
 		return stat;
@@ -89,6 +103,13 @@ DRESULT disk_read (
 	case DEV_RAM :
 		return res;
 	case DEV_MMC :
+		sector += FLASH_REV_SEC_NUM; 
+		if(spi_sd_obj.read(buff, sector, count)){
+			fs_printf("[%d][%s EER]\n",__LINE__,__FUNCTION__);
+			res = RES_ERROR;
+		}else{
+			res = RES_OK;
+		}
 		return res;
 	case DEV_USB :
 		return res;
@@ -122,6 +143,13 @@ DRESULT disk_write (
 	case DEV_RAM :
 		return res;
 	case DEV_MMC :
+		sector += FLASH_REV_SEC_NUM;  
+		if(spi_sd_obj.write(buff, sector, count)){
+			fs_printf("[%d][%s EER]\n",__LINE__,__FUNCTION__);
+			res = RES_ERROR;
+		}else{
+			res = RES_OK;
+		}
 		return res;
 	case DEV_USB :
 		return res;
@@ -147,11 +175,18 @@ DRESULT disk_ioctl (
     case DEV_FLASH:
         if(spi_flash_obj.io_ctr(cmd, buff)){
             res = RES_OK;
-        }
+        }else{
+			fs_printf("[%d][%s EER]\n",__LINE__,__FUNCTION__);
+		}
         return res;
 	case DEV_RAM :
 		return res;
 	case DEV_MMC :
+        if(spi_sd_obj.io_ctr(cmd, buff)){
+            res = RES_OK;
+        }else{
+			fs_printf("[%d][%s EER]\n",__LINE__,__FUNCTION__);
+		}
 		return res;
 	case DEV_USB :
 		return res;

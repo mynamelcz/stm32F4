@@ -15,37 +15,73 @@ typedef FIL     fil_t;
 //u8 work[FF_MAX_SS]; 
 fs_t  flash_fs;
 fil_t new_fil;
-
+fs_t  sd_fs;
+fil_t sd_fil;
 void fs_test(void)
 {
 	
     u32 res = 0;
-//	u32 w_len = 0;
-//	u32 r_len = 0;
-//	u8 r_buf[32];
-    res = f_mount(&flash_fs, "0:", 1);
+	u32 w_len = 0;
+	u32 r_len = 0;
+	u8 r_buf[32];
+//    res = f_mount(&flash_fs, "0:", 1);
+//	if(res != FR_OK){
+//		vfs_printf("VFS ERR	| f_mount err: %d\n",res);
+////		if(res == FR_NO_FILESYSTEM){
+////			res = f_mkfs("0:", FM_ANY, 0, work, FF_MAX_SS);
+////			if(res != FR_OK){
+////				vfs_printf("VFS ERR	| f_mkfs err: %d\n",res);
+////				while(1);
+////			}
+////		}
+//	}
+    res = f_mount(&sd_fs, "1:", 1);
 	if(res != FR_OK){
 		vfs_printf("VFS ERR	| f_mount err: %d\n",res);
-//		if(res == FR_NO_FILESYSTEM){
-//			res = f_mkfs("0:", FM_ANY, 0, work, FF_MAX_SS);
-//			if(res != FR_OK){
-//				vfs_printf("VFS ERR	| f_mkfs err: %d\n",res);
-//				while(1);
-//			}
-//		}
-	}
 
-	res = scan_files ("/");
+	}
+//	
+//	res = f_open(&sd_fil,"1:test1.txt",FA_CREATE_NEW | FA_WRITE);
+//	if(res != FR_OK){
+//		vfs_printf("VFS ERR	| f_open err: %d\n",res);
+//	}else{
+//		
+//		res = f_write (&sd_fil,"ÄãºÃ", 4, &w_len);
+//		if(res != FR_OK){
+//			vfs_printf("VFS ERR	| f_write err: %d\n",res);
+//		}
+//		res = f_close (&sd_fil);
+//		if(res != FR_OK){
+//			vfs_printf("VFS ERR	| f_close err: %d\n",res);
+//		}	
+//		res = f_open(&sd_fil,"1:test1.txt",FA_OPEN_EXISTING | FA_READ);
+//		if(res != FR_OK){
+//			vfs_printf("VFS ERR	| f_open err: %d\n",res);
+//		}	
+//		res = f_read (&sd_fil, r_buf, 6, &r_len);
+//		if(res != FR_OK){
+//			vfs_printf("VFS ERR	| f_write err: %d\n",res);
+//		}
+//		vfs_puthex((const char *)r_buf, r_len);	
+//		r_buf[r_len] = 0;
+//		vfs_printf("f_read: %s\n",r_buf);
+//		
+//	}
+	
+	
+	res = scan_files ("1:");
 	if(res != FR_OK){
 		vfs_printf("VFS ERR	| scan_files err: %d\n",res);
 	}
-	vfs_get_dev_inf("0:");
+
+	res = scan_files ("1:");
+	if(res != FR_OK){
+		vfs_printf("VFS ERR	| scan_files err: %d\n",res);
+	}
+//	vfs_get_dev_inf("0:");
 	
 	
-//	res = f_open(&new_fil,"0:test1.txt",FA_OPEN_EXISTING | FA_WRITE);
-//	if(res != FR_OK){
-//		vfs_printf("VFS ERR	| f_open err: %d\n",res);
-//	}
+
 //	res = f_write (&new_fil,"ÄãºÃ", 4, &w_len);
 //	if(res != FR_OK){
 //		vfs_printf("VFS ERR	| f_write err: %d\n",res);
@@ -56,7 +92,7 @@ void fs_test(void)
 //		vfs_printf("VFS ERR	| f_close err: %d\n",res);
 //	}		
 
-    vfs_get_file_inf("0:test1.txt");
+//    vfs_get_file_inf("0:test1.txt");
 //	res = f_open(&new_fil,"0:testlongfilename.txt",FA_OPEN_EXISTING | FA_READ);
 //	if(res != FR_OK){
 //		vfs_printf("VFS ERR	| f_open err: %d\n",res);
@@ -88,7 +124,11 @@ u32 scan_files (char* path)
     if (res == FR_OK) {
         for (;;) { 
             res = f_readdir(&dir, &fno);                   /* Read a directory item */
-            if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
+            if (res != FR_OK || fno.fname[0] == 0){   /* Break on error or end of dir */
+			    vfs_printf("[%d][VFS ERR]	| f_write err: %d\n",__LINE__,res);
+				break;
+			}
+			
             if (fno.fattrib & AM_DIR) {                    /* It is a directory */
                 i = strlen((const char *)path);
                 sprintf(&path[i], "/%s", fno.fname);
@@ -100,7 +140,9 @@ u32 scan_files (char* path)
             }
         }
         f_closedir(&dir);
-    }
+    }else{
+		vfs_printf("[%d][VFS ERR] res: %d\n",__LINE__,res);
+	}
     return res;
 }
 

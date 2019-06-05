@@ -1,8 +1,21 @@
 #ifndef	__SPI_SD_H
 #define	__SPI_SD_H
 #include "includes.h"
-//#include "diskio.h"
+#include "diskio.h"
 #include "bsp_spi.h"
+
+
+#define SD_REV_SEC_NUM		0
+
+
+
+
+
+
+
+
+
+
 
 /**
   * @brief  Start Data tokens:
@@ -53,8 +66,8 @@
 #define SD_CMD_CRC_ON_OFF             59  /*!< CMD59 = 0x7B */
 
 typedef enum {
-	SD_OFF_LINE = 0,
-	SD_ON_LINE,
+	SD_STA_OFF_LINE = 0,
+	SD_STA_ON_LINE,
 }SD_Dev_state;
 
 
@@ -257,17 +270,36 @@ typedef struct{
 }__sd_spi_r7;
 
 
+/***   IO CTROL CMD ***/
+typedef enum{
+	/* file sys cmd */
+	SD_CTRL_SYNC 		= CTRL_SYNC,
+	SD_GET_SECTOR_COUNT	= GET_SECTOR_COUNT,
+	SD_GET_SECTOR_SIZE  = GET_SECTOR_SIZE,
+    SD_GET_BLOCK_SIZE	= GET_BLOCK_SIZE,
+	SD_CTRL_TRIM	    = CTRL_TRIM,
+	SD_CTRL_POWER		= CTRL_POWER,
+    SD_CTRL_LOCK		= CTRL_LOCK,
+	SD_CTRL_EJECT		= CTRL_EJECT,
+	SD_CTRL_FORMAT		= CTRL_FORMAT,
+	/* user cmd */
+	SD_CTRL_GET_SIZE, 	   //unit KB 
+	SD_CTRL_CHIP_ERASE,
+	SD_CTRL_POWER_ON,
+	SD_CTRL_POWER_OFF,
+}SD_CTR_CMD;
+
 
 
 
 typedef struct
 {	
 	SD_Type     	type;
-	SD_Dev_state	dev_state;
+	u8				dev_state;
 	SD_CSD_T 		CSD;
 	SD_CID_T 		CID;
-     u64   capacity;  /*!< Card Capacity */
-	 u32 	block_sz;
+    u64     capacity;  /*!< Card Capacity */
+	u32 	block_sz;
 	
 }__sd_inf_t;
 
@@ -279,12 +311,11 @@ typedef struct
 	__sd_inf_t		sd_inf;
 	
 	SD_Error (*init)(__spi_ctr_obj *hd_io);
-    u32  (*read_id)(void);
-    u32  (*status)(void);
-	void (*read)(u8 *buf, u32 addr, u32 len);
-	void (*write)(const u8 *buf, u32 addr, u32 len);
+    u8  (*status)(void);
+	u8  (*read)(u8 *buf, u32 start_blk, u16 blk_bum);
+	u8  (*write)(const u8 *buf,u32 start_blk, u16 blk_bum);
 	void (*erase)(u32 start_sec, u32 sct_num);
-	bool (*io_ctr)(u8 cmd, void *buff);	
+	bool (*io_ctr)(u8 cmd, void *buff);		
 
 }__spi_sd_obj;
 

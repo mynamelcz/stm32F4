@@ -17,11 +17,17 @@ static u8 sd_speed_set(u8 speed)
 		res = this_obj->hd_io->io_ctr(SD_CLK_SPEED_SET, (void *)&speed);	
 	return res;
 }
-u8 sd_detect(void)
+
+
+static u8 sd_get_state(void)
 {
-	u8 status = SD_ON_LINE;
-	return status;
+	return this_obj->sd_inf.dev_state;
 }
+static void sd_set_state(SD_Dev_state state)
+{
+	this_obj->sd_inf.dev_state = state;
+}
+
 
 static u8 sd_wait_ready(void)  
 {  
@@ -284,7 +290,7 @@ static SD_Error sd_get_csd_reg(SD_CSD_T *sd_csd)
 static SD_Error sd_get_cid_reg(SD_CID_T *sd_cid)
 {
 	SD_Error res = SD_NO_ERR;
-	SD_Type sd_type = this_obj->sd_inf.type;
+
 	u8 r1;
 	u8 CID_Tab[16];
 	sd_cmd(SD_SPI_R1, SD_CMD_SEND_CID, 0x00, 0xff, &r1);
@@ -409,7 +415,7 @@ SD_Error sd_getcard_inf(__sd_inf_t *sd_inf)
 static SD_Error sd_idle_mode(void)
 {
 	u8 tmp_buf[10];
-	u8 retry = MAX_RETRY_TIME;
+	u8 retry = 10;
 	u8 r1 = 0xff;
 	//0: Reset card  >74  clk **/
 	sd_speed_set(SD_CLK_SPEED_LOW);
@@ -425,6 +431,16 @@ static SD_Error sd_idle_mode(void)
 }
 
 
+
+static u32 block_convey_addr(u32 block)
+{
+	if((spi_sd_obj.sd_inf.type == SD_TYPE_SDHC)||
+	   (spi_sd_obj.sd_inf.type == SD_TYPE_SDXC)){
+		return block;
+	}
+	return (block * spi_sd_obj.sd_inf.block_sz);
+}
+
 /*============	读写函数	=============*/
 /*
 *	1. addr shall aligned to block boundary
@@ -432,13 +448,17 @@ static SD_Error sd_idle_mode(void)
 	   b. addr  在SDHC中以(block) 512-byte为单位, 
 		    	在SDSC中以byte为单位。
 */
-static u8 sd_read_blk(u8 *buf, u32 addr, u16 blk_sz, u16 blk_bum)
+static u8 sd_read_blk(u8 *buf, u32 start_blk, u16 blk_bum)
 {
 	ASSERT(buf);
 	u32 retry = MAX_RETRY_TIME;
 	u8 res = 0xff;
 	u16 crc = 0;
 	u8 *ptr = buf;
+	u16 blk_sz = this_obj->sd_inf.block_sz;
+	
+	u32 addr = 0;
+	addr = block_convey_addr(start_blk);
 	if(blk_bum ==1){
 		sd_cmd(SD_SPI_R1, SD_CMD_READ_SINGLE_BLOCK, addr, 0xFF, &res);
 		if(res != 0){
@@ -483,13 +503,18 @@ static u8 sd_read_blk(u8 *buf, u32 addr, u16 blk_sz, u16 blk_bum)
 }
 
 
-static u8 sd_write_blk(u8 *buf, u32 addr, u16 blk_sz, u16 blk_bum)
+static u8 sd_write_blk(const u8 *buf, u32 start_blk, u16 blk_bum)
 {
 	ASSERT(buf);
 	u8 res = 0xff;
 	u8 data_res = 0;
 	u16 crc = 0xffff;
-    u8 *ptr = buf;
+    const u8 * ptr = buf;
+	u16 blk_sz = this_obj->sd_inf.block_sz;
+	
+	u32 addr = 0;
+	addr = block_convey_addr(start_blk);
+	
 	if(blk_bum==1){
 		sd_cmd(SD_SPI_R1, SD_CMD_WRITE_SINGLE_BLOCK, addr, 0xFF, &res);		//CMD24
 		if(res != 0){
@@ -578,7 +603,8 @@ static SD_Error identification_v2v3(void)
 {
 	u8 retry, r1;
 	u8 rx_buf[5] = {0};
-
+    this_obj->hd_io->w_r_byte(0xff);			//提高可靠性
+	this_obj->hd_io->w_r_byte(0xff);
     retry = MAX_RETRY_TIME;		 
 	do{// ACMD41: 1.send host capacity support information 2.Active teh card
 		r1 = sd_cmd(SD_SPI_R1, SD_CMD_APP_CMD, 0, 0xFF, rx_buf);
@@ -628,7 +654,67 @@ static SD_Error sd_identification(void)
 }
 
 
-	u8 sd_buf[512*4] = {0};
+
+static bool sd_io_control(u8 cmd, void *buff)
+{
+    u8 res = false;
+	
+	sd_printf("sd_io_control cmd: %d \n",cmd);
+	
+    switch(cmd){
+/* Generic command (Used by FatFs) */
+        case SD_CTRL_SYNC:			//make sure write end
+			res = true;			    //default ok;  因为写入时已经有等待写入完成，所以这里默认ok
+            break;
+        case SD_GET_SECTOR_COUNT:	
+            *((u32 *)buff) = this_obj->sd_inf.capacity/ this_obj->sd_inf.block_sz;
+            res = true;
+            break;
+        case SD_GET_SECTOR_SIZE:
+            *((u32 *)buff) = (u32)this_obj->sd_inf.block_sz;
+		    sd_printf("block_sz: 0x%x\n",this_obj->sd_inf.block_sz);
+            res = true;
+            break;
+        case SD_GET_BLOCK_SIZE:
+            *((u32 *)buff) = 1;
+            res = true;
+            break;
+        case SD_CTRL_TRIM:
+            break;
+/* Generic command (Not used by FatFs) */
+        case SD_CTRL_POWER:
+            break;
+        case SD_CTRL_LOCK:
+            break;
+        case SD_CTRL_EJECT:
+            break;
+        case SD_CTRL_FORMAT:
+            break;
+/*    user cmd   */		
+		case SD_CTRL_GET_SIZE:
+			break;
+		case SD_CTRL_POWER_ON:
+			break;	
+		case SD_CTRL_POWER_OFF:
+			break;			
+		default:
+			break;
+
+    }
+    return res;
+} 
+
+
+
+
+
+
+
+
+
+
+
+
 static SD_Error sd_init(__spi_ctr_obj  *hd_io)
 {
 	sd_printf("FUN:%s\n",__func__);
@@ -640,7 +726,12 @@ static SD_Error sd_init(__spi_ctr_obj  *hd_io)
     this_obj = &spi_sd_obj;
 	this_obj->hd_io = hd_io;
 	this_obj->sd_inf.type = SD_TYPE_UNKNOW;	
-   
+    
+	if(sd_get_state() == SD_STA_ON_LINE){
+	// already init
+		return SD_NO_ERR;
+	}
+
     res = sd_identification();
 	
 	if(res != SD_NO_ERR){
@@ -657,31 +748,10 @@ static SD_Error sd_init(__spi_ctr_obj  *hd_io)
 	}	
 	sd_dis_select();
 	sd_speed_set(SD_CLK_SPEED_HIGH);
-	
 	sd_printf(">>>>> get  sd  inform <<<<<\n");
-	
     sd_getcard_inf(&this_obj->sd_inf);
 	
-
-	
-
-	//sd_read_single_block(sd_buf, 0, 512);
-	
-	//sd_read_multi_blocks(sd_buf, 1, 512, 1);
-//		sd_read_multi_blocks(sd_buf, 0, 512, 2);
-//	sd_puthex((const char *)sd_buf,512*2);
-//	u16 i = 0;
-//	for(i=0;i<=0xff*4;i++){
-//		sd_buf[i] = 0xbb;
-//	}
-//  	sd_write_blk(sd_buf,0,512,4);
-	
-	sd_read_blk(sd_buf, 0, 512, 4);
-	sd_puthex((const char *)sd_buf,512*4);	
-	while(1);
-	
-	
-	
+	sd_set_state(SD_STA_ON_LINE);
 	return SD_NO_ERR;
 }
 
@@ -689,7 +759,10 @@ static SD_Error sd_init(__spi_ctr_obj  *hd_io)
 
 __spi_sd_obj spi_sd_obj = {
 
-	.init = sd_init,
-
+	.init 	= sd_init,
+	.read 	= sd_read_blk,
+	.write 	= sd_write_blk,
+	.io_ctr = sd_io_control,
+	.status = sd_get_state,
 };
  

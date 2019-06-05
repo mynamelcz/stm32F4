@@ -1115,6 +1115,8 @@ static FRESULT sync_fs (	/* Returns FR_OK or FR_DISK_ERR */
 			fs->fsi_flag = 0;
 		}
 		/* Make sure that no pending write process in the lower layer */
+		
+		fs_printf("^^^^ fs->pdrv: %d\n",fs->pdrv);
 		if (disk_ioctl(fs->pdrv, CTRL_SYNC, 0) != RES_OK) res = FR_DISK_ERR;
 	}
 
@@ -3251,8 +3253,10 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	/* The filesystem object is not valid. */
 	/* Following code attempts to mount the volume. (analyze BPB and initialize the filesystem object) */
 
+
 	fs->fs_type = 0;					/* Clear the filesystem object */
 	fs->pdrv = LD2PD(vol);				/* Bind the logical drive and a physical drive */
+	fs_printf("**** fs->pdrv: %d  LINE: %d\n",fs->pdrv,__LINE__);
 	stat = disk_initialize(fs->pdrv);	/* Initialize the physical drive */
 	if (stat & STA_NOINIT) { 			/* Check if the initialization succeeded */
 		return FR_NOT_READY;			/* Failed to initialize due to no medium or hard error */
