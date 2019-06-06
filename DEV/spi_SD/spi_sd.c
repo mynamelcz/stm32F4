@@ -126,7 +126,7 @@ static u8 sd_cmd(u8 Rx, u8 Cmd, u32 Arg, u8 Crc, u8 *r_buf)
 #define READ_BLOCK_MAX    200000 //200ms
 #define WAIT_READY_MAX    500000 //500ms
 
-SD_Error sd_check_res_token(u8 token)
+spi_sd_err sd_check_res_token(u8 token)
 {
 	u32 retry = WAIT_READY_MAX; 
 	// Check if response is got or a timeout is happen
@@ -143,9 +143,9 @@ SD_Error sd_check_res_token(u8 token)
 
 
 
-static SD_Error sd_get_csd_reg(SD_CSD_T *sd_csd)
+static spi_sd_err sd_get_csd_reg(SD_CSD_T *sd_csd)
 {
-	SD_Error res = SD_NO_ERR;
+	spi_sd_err res = SD_NO_ERR;
 	SD_Type sd_type = this_obj->sd_inf.type;
 	u8 r1;
 	u8 CSD_Tab[16];
@@ -285,9 +285,9 @@ static SD_Error sd_get_csd_reg(SD_CSD_T *sd_csd)
 }
 
 
-static SD_Error sd_get_cid_reg(SD_CID_T *sd_cid)
+static spi_sd_err sd_get_cid_reg(SD_CID_T *sd_cid)
 {
-	SD_Error res = SD_NO_ERR;
+	spi_sd_err res = SD_NO_ERR;
 
 	u8 r1;
 	u8 CID_Tab[16];
@@ -376,9 +376,9 @@ static SD_Error sd_get_cid_reg(SD_CID_T *sd_cid)
 
 
 
-SD_Error sd_getcard_inf(__sd_inf_t *sd_inf)
+spi_sd_err sd_getcard_inf(__sd_inf_t *sd_inf)
 {
-	SD_Error res = SD_NO_ERR;
+	spi_sd_err res = SD_NO_ERR;
 	SD_Type sd_type = sd_inf->type;
 	res = sd_get_csd_reg(&(this_obj->sd_inf.CSD));
 	res = sd_get_cid_reg(&(this_obj->sd_inf.CID));
@@ -411,7 +411,7 @@ SD_Error sd_getcard_inf(__sd_inf_t *sd_inf)
 
 
 
-static SD_Error sd_idle_mode(void)
+static spi_sd_err sd_idle_mode(void)
 {
 	u8 tmp_buf[10];
 	u8 retry = 10;
@@ -444,7 +444,7 @@ static u32 block_convey_addr(u32 block)
 
 
 
-static SD_Error identification_v1_card(void)
+static spi_sd_err identification_v1_card(void)
 {
 	u8 retry, r1;
 	u8 rx_buf[5] = {0};
@@ -470,7 +470,7 @@ static SD_Error identification_v1_card(void)
 }
 
 
-static SD_Error identification_v2v3(void)
+static spi_sd_err identification_v2v3(void)
 {
 	u8 retry, r1;
 	u8 rx_buf[5] = {0};
@@ -500,11 +500,11 @@ static SD_Error identification_v2v3(void)
 		return SD_NO_ERR;	
 	} 		
 }
-static SD_Error sd_identification(void)
+static spi_sd_err sd_identification(void)
 {
 	u8 r1;
 	u8 rx_buf[5] = {0};
-	SD_Error res = SD_NO_ERR;
+	spi_sd_err res = SD_NO_ERR;
     res = sd_idle_mode();
 	if(res != SD_NO_ERR){
         ERR_printf(0);
@@ -704,13 +704,13 @@ static u8 sd_write_blk(const u8 *buf, u32 start_blk, u16 blk_bum)
 	return 0;
 }
 /*============	SD ¿¨³õÊ¼»¯	=============*/
-static SD_Error sd_init(__spi_ctr_obj  *hd_io)
+static spi_sd_err sd_init(__spi_ctr_obj  *hd_io)
 {
 	sd_printf("FUN:%s\n",__func__);
 	ASSERT(hd_io);
 	ASSERT(hd_io->read);
 	ASSERT(hd_io->write);
-    SD_Error res;
+    spi_sd_err res;
 	u8 r1;
     this_obj = &spi_sd_obj;
 	this_obj->hd_io = hd_io;

@@ -3,10 +3,12 @@
 #include "bsp_spi.h"
 #include "bsp_uart.h"
 #include "bsp_sys.h"
+#include "bsp_sdio.h"
 
 #include "led.h"
 #include "spi_flash.h"
 #include "spi_sd.h"
+#include "sdio_sd.h"
 
 
 
@@ -21,6 +23,11 @@ static void flash_bsp_init(void);
 static void spi_sd_cs_gpio_init(void);
 static void spi_sd_cs_ctr(u8 en);
 static void spi_sd_bsp_init(void);
+/** sdio  sd  fun **/
+static void sdio_sd_bsp_init(void);
+
+
+
 
 void bsp_init(void)
 {
@@ -30,6 +37,7 @@ void bsp_init(void)
 	
 	flash_bsp_init();
 	spi_sd_bsp_init();
+	sdio_sd_bsp_init();
 }
 
 
@@ -85,6 +93,15 @@ static void spi_sd_cs_ctr(u8 en)
 	   LL_GPIO_ResetOutputPin(SPI_SD_CS_PORT, SPI_SD_CS_PIN);
 }
 
+
+/** ============  SDIO SD   =========== **/
+static void sdio_sd_bsp_init(void)
+{
+	u8 res = 0;
+	spi_sd_cs_gpio_init();
+    sdio_ctr_obj.init();
+
+}
 
 
 static void gpio_clk_enable(void)

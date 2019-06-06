@@ -21,9 +21,12 @@
 #endif
 
 
+typedef struct{
+	void (*init)(void);
 
+}__sdio_ctr_obj;
 
-
+extern __sdio_ctr_obj sdio_ctr_obj;
 
 #endif
 

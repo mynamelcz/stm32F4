@@ -27,41 +27,77 @@
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN TD */
+typedef struct{
+	u32  time;
+	u32  cnt;
+	void (*hdl_fun)(void);
+	struct list_head list;
+}__irq_hd_t;
 
-/* USER CODE END TD */
 
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
- 
-/* USER CODE END PD */
 
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
+#define __IRQ_HdlTypedef(fun, times) 	   \
+ 	 __irq_hd_t fun##irq = {			   \
+	 .time  = times,					   \
+	 .cnt   = 0,						   \
+	 .hdl_fun = fun,          			   \
+	 .list = LIST_HEAD_INIT(fun##irq.list) \
+	}
+	 
 
-/* USER CODE END PM */
 
-/* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN PV */
+#define IRQ_HdlList(fun, time)	&(fun##irq.list)
+#define IRQ_Hdl(fun)	    	&(fun##irq)	
+	
+		
+LIST_HEAD(TIM2_IRQHandler_ListHead);
+	
+void register_timer2_handler(__irq_hd_t *hd_t)
+{
+	list_add_tail(&hd_t->list, &TIM2_IRQHandler_ListHead);	
+}	
+	
+void register_timer2_handler_malloc(void(*fun)(void), u32 time)
+{
+	__irq_hd_t *hd_t = malloc(sizeof(__irq_hd_t));
+	ASSERT(hd_t);
+	hd_t->cnt = 0;
+	hd_t->time = time;
+	hd_t->hdl_fun = fun;
+	hd_t->list.next = &(hd_t->list);
+	hd_t->list.prev = &(hd_t->list);
+	
+	list_add_tail(&hd_t->list, &TIM2_IRQHandler_ListHead);	
+}	
+	
 
-/* USER CODE END PV */
+	
+	
+	
+void TIM2_IRQHandler(void)
+{
+	volatile static u32 cnt = 0;
+	__irq_hd_t *pos = NULL;
+	cnt++;
+	list_for_each_entry(pos, &TIM2_IRQHandler_ListHead, list){
+		if(pos->hdl_fun){
+			if(pos->cnt++ >= pos->time){
+				pos->hdl_fun();
+				pos->cnt = 0;
+			}
+		}else{
+			DBUG_Printf("TIM2_IRQHandler err\n");
+		}	
+	}	  
+  
+  
+}
 
-/* Private function prototypes -----------------------------------------------*/
-/* USER CODE BEGIN PFP */
+	 
 
-/* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
 
-/* USER CODE END 0 */
 
-/* External variables --------------------------------------------------------*/
-
-/* USER CODE BEGIN EV */
-
-/* USER CODE END EV */
 
 /******************************************************************************/
 /*           Cortex-M4 Processor Interruption and Exception Handlers          */ 
@@ -95,6 +131,14 @@ void HardFault_Handler(void)
   }
 }
 
+
+void SysTick_Handler(void)
+{
+	
+  HAL_IncTick();
+  osSystickHandler();
+
+}
 /**
   * @brief This function handles Memory management fault.
   */
@@ -153,21 +197,7 @@ void DebugMon_Handler(void)
   /* USER CODE END DebugMonitor_IRQn 1 */
 }
 
-/**
-  * @brief This function handles System tick timer.
-  */
-void SysTick_Handler(void)
-{
-  /* USER CODE BEGIN SysTick_IRQn 0 */
 
-  /* USER CODE END SysTick_IRQn 0 */
-  HAL_IncTick();
-  osSystickHandler();
-
-  /* USER CODE BEGIN SysTick_IRQn 1 */
-
-  /* USER CODE END SysTick_IRQn 1 */
-}
 
 
 void SDIO_IRQHandler(void)

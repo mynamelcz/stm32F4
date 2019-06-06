@@ -66,8 +66,8 @@ int main(void)
 	
 	
 
-   
-	
+   HAL_Delay(500);
+
   
 #ifdef VECT_TAB_SRAM
   LED1_ON();
@@ -76,7 +76,7 @@ int main(void)
 
 
    spi_flash_test();
-   fs_test();
+//   fs_test();
 
   /* Start scheduler */
 //   task_startup();

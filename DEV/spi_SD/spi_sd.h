@@ -85,7 +85,7 @@ typedef enum {
 	SD_ERR_TIME_OUT,
     SD_ERR_CHECK_VOL,
     SD_ERR_GO_IDLE,
-}SD_Error;
+}spi_sd_err;
 
 typedef struct
 {
@@ -230,7 +230,7 @@ typedef struct
 	__spi_ctr_obj  *hd_io;
 	__sd_inf_t		sd_inf;
 	
-	SD_Error (*init)(__spi_ctr_obj *hd_io);
+	spi_sd_err (*init)(__spi_ctr_obj *hd_io);
     u8  (*status)(void);
 	u8  (*read)(u8 *buf, u32 start_blk, u16 blk_bum);
 	u8  (*write)(const u8 *buf,u32 start_blk, u16 blk_bum);
