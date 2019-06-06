@@ -16,7 +16,13 @@ void print_code_version(void)
 }
 
 
-
+void my_memcpy(char *tar, const char *src, u32 len)
+{
+	ASSERT(tar);
+	ASSERT(src);
+	while(len--)
+		*tar++ = *src++;
+}
 
  
 #ifdef __ASSERT_PARAM

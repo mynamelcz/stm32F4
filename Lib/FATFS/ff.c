@@ -3256,7 +3256,6 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 	fs->fs_type = 0;					/* Clear the filesystem object */
 	fs->pdrv = LD2PD(vol);				/* Bind the logical drive and a physical drive */
-	fs_printf("**** fs->pdrv: %d  LINE: %d\n",fs->pdrv,__LINE__);
 	stat = disk_initialize(fs->pdrv);	/* Initialize the physical drive */
 	if (stat & STA_NOINIT) { 			/* Check if the initialization succeeded */
 		return FR_NOT_READY;			/* Failed to initialize due to no medium or hard error */
@@ -3272,7 +3271,6 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	/* Find an FAT partition on the drive. Supports only generic partitioning rules, FDISK (MBR) and SFD (w/o partition). */
 	bsect = 0;
 	fmt = check_fs(fs, bsect);			/* Load sector 0 and check if it is an FAT-VBR as SFD */
-	fs_printf("check_fs fmt: %d\n",fmt);
 	if (fmt == 2 || (fmt < 2 && LD2PT(vol) != 0)) {	/* Not an FAT-VBR or forced partition number */
 		for (i = 0; i < 4; i++) {		/* Get partition offset */
 			pt = fs->win + (MBR_Table + i * SZ_PTE);

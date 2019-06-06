@@ -8,6 +8,12 @@
 #define DBUG_Printf 	printf		// MY_RTT_printf
 #define DBUG_Put_hex 	my_printhex	
 
+
+//====== ERR  =========//
+#define ERR_printf(res)		 DBUG_Printf("[%d][ERR][%s] Res: %d\n",__LINE__,__func__,res)
+
+
+
 //======= USER =======//
 #define DBUG_MAIN	
 #define DBUG_TASK_MANAGE
@@ -40,7 +46,9 @@
 
 
 //======= DEV =======//
-#define __DBUG_DEV_SPI_SD
+//#define __DBUG_DEV_SPI_SD
+#define __DBUG_SPI_FLASH
+
 
 #ifdef __DBUG_DEV_SPI_SD
 #define sd_printf		DBUG_Printf
@@ -50,7 +58,6 @@
 #define sd_puthex(...)	
 #endif
 
-#define __DBUG_SPI_FLASH
 
 #ifdef __DBUG_SPI_FLASH
 #define flash_printf		DBUG_Printf

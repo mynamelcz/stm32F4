@@ -23,10 +23,11 @@ void assert_fail(u8* file, u32 line);
 #endif
 
 
+
 void sys_delay_us(u32 us);
 void print_code_version(void);
 
-
+void my_memcpy(char *tar, const char *src, u32 len);
 
 
 

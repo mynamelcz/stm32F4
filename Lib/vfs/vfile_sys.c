@@ -7,7 +7,9 @@
 
 u32 vfs_get_dev_inf(const TCHAR* path);
 u32 vfs_get_file_inf(const TCHAR* path);
-u32 scan_files (char* path);
+FRESULT scan_files (char* path);
+static u32 my_scan_file(const char* path);
+
 
 typedef FATFS   fs_t;
 typedef FIL     fil_t;
@@ -21,9 +23,12 @@ void fs_test(void)
 {
 	
     u32 res = 0;
-	u32 w_len = 0;
-	u32 r_len = 0;
-	u8 r_buf[32];
+//	u32 w_len = 0;
+//	u32 r_len = 0;
+//	u8 r_buf[32];
+//	
+	
+
 //    res = f_mount(&flash_fs, "0:", 1);
 //	if(res != FR_OK){
 //		vfs_printf("VFS ERR	| f_mount err: %d\n",res);
@@ -68,17 +73,14 @@ void fs_test(void)
 //		
 //	}
 	
-	
-	res = scan_files ("1:");
+
+	res = my_scan_file("1:");
 	if(res != FR_OK){
 		vfs_printf("VFS ERR	| scan_files err: %d\n",res);
 	}
 
-	res = scan_files ("1:");
-	if(res != FR_OK){
-		vfs_printf("VFS ERR	| scan_files err: %d\n",res);
-	}
-//	vfs_get_dev_inf("0:");
+
+	vfs_get_dev_inf("1:");
 	
 	
 
@@ -114,7 +116,19 @@ void fs_test(void)
 	
 	
 }
-u32 scan_files (char* path)
+
+
+static u32 my_scan_file(const char* path)
+{
+	u32 res = 0;
+	char pbuf[255];
+	my_memcpy(pbuf, path, strlen(path));
+	res = scan_files(pbuf);
+	return (res);
+}
+
+
+static FRESULT scan_files (char* path)
 {
     FRESULT res;
     DIR dir;
@@ -125,10 +139,8 @@ u32 scan_files (char* path)
         for (;;) { 
             res = f_readdir(&dir, &fno);                   /* Read a directory item */
             if (res != FR_OK || fno.fname[0] == 0){   /* Break on error or end of dir */
-			    vfs_printf("[%d][VFS ERR]	| f_write err: %d\n",__LINE__,res);
 				break;
 			}
-			
             if (fno.fattrib & AM_DIR) {                    /* It is a directory */
                 i = strlen((const char *)path);
                 sprintf(&path[i], "/%s", fno.fname);
@@ -136,12 +148,12 @@ u32 scan_files (char* path)
                 if (res != FR_OK) break;
                 path[i] = 0;
             } else {                                       /* It is a file. */
-                printf("%s/%s\n", path, fno.fname);
+                vfs_printf("%s/%s\n", path, fno.fname);
             }
         }
         f_closedir(&dir);
     }else{
-		vfs_printf("[%d][VFS ERR] res: %d\n",__LINE__,res);
+		ERR_printf(res);
 	}
     return res;
 }
@@ -157,7 +169,7 @@ u32 vfs_get_dev_inf(const TCHAR* path)
 	u32 free_sz_kb = 0;
 	res =  f_getfree (path, &free_clst, &fs);
 	if(res != FR_OK){
-		vfs_printf("VFS ERR	| f_getfree err: %d\n",res);	
+		ERR_printf(res);	
 		return res;
 	}
 	total_clst = (fs->n_fatent-2) * fs->csize;
@@ -168,6 +180,7 @@ u32 vfs_get_dev_inf(const TCHAR* path)
 
 	
 	vfs_printf("dev fs type: %d\n", fs->fs_type);
+	vfs_printf("n_fatent: %d\n", fs->n_fatent);
 	vfs_printf("dev tatal cluster num: %d\n", total_clst);
 	vfs_printf("dev free  cluster num: %d\n", free_clst);
 	vfs_printf("dev tatal size kb: %d\n", tatal_sz_kb);
@@ -184,7 +197,7 @@ u32 vfs_get_file_inf(const TCHAR* path)
 	date_t *d_tmp;
 	res = f_stat(path, &f_inf);
 	if(res != FR_OK){
-		vfs_printf("VFS ERR	| f_stat err: %d\n",res);	
+		ERR_printf(res);	
 		return res;
 	}
 	

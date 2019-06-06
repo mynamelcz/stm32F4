@@ -12,27 +12,16 @@
 
 
 
+/*******	DATA TRAN	TOKEN 	*******/
+#define SD_START_DATA_SINGLE_BLOCK_READ    0xFE  //	Start Single Block Read 
+#define SD_START_DATA_MULTIPLE_BLOCK_READ  0xFE  // Start Multiple Block Read 
+#define SD_START_DATA_SINGLE_BLOCK_WRITE   0xFE  //	Start Single Block Write 
+#define SD_START_DATA_MULTIPLE_BLOCK_WRITE 0xFC  // Start Multiple Block Write 
+#define SD_STOP_DATA_MULTIPLE_BLOCK_WRITE  0xFD  // Stop Multiple Block Write 
 
 
 
-
-
-/**
-  * @brief  Start Data tokens:
-  *         Tokens (necessary because at nop/idle (and CS active) only 0xff is
-  *         on the data/command line)
-  */
-#define SD_START_DATA_SINGLE_BLOCK_READ    0xFE  /*!< Data token start byte, Start Single Block Read */
-#define SD_START_DATA_MULTIPLE_BLOCK_READ  0xFE  /*!< Data token start byte, Start Multiple Block Read */
-#define SD_START_DATA_SINGLE_BLOCK_WRITE   0xFE  /*!< Data token start byte, Start Single Block Write */
-#define SD_START_DATA_MULTIPLE_BLOCK_WRITE 0xFC  /*!< Data token start byte, Start Multiple Block Write */
-#define SD_STOP_DATA_MULTIPLE_BLOCK_WRITE  0xFD  /*!< Data toke stop byte, Stop Multiple Block Write */
-
-
-
-/**
-  * @brief  Commands: CMDxx = CMD-number | 0x40
-  */
+/*******	SD 	CMD 	 	*******/
 #define SD_CMD_GO_IDLE_STATE          0   /*!< CMD0 = 0x40 */
 #define SD_CMD_SEND_OP_COND           1   /*!< CMD1 = 0x41 */
 #define SD_CMD_IF_COND                8   /*!< CMD8 = 0x48 */
@@ -82,19 +71,6 @@ typedef enum {
     SD_TYPE_SDXC,   // 32G ~ 2T
 }SD_Type;
 
-typedef enum {
-    SD_VOL_HIGH,    // 2.7~3.6
-    SD_VOL_UHS,     // VDD1:2.7~3.6 VDD2:1.7~1.95
-    SD_VOL_LVS,     // 2.7~3.6, signal vol:1.7~1.95 
-}SD_Vol;
-
-typedef enum {
-    CLASS_0,        // 
-    CLASS_2,        // >=  2M/S
-    CLASS_4,        // >=  4M/S
-    CLASS_6,        // >=  6M/S
-    CLASS_10,       // >= 10M/S
-}SD_CLass;
 
 
 typedef enum {
@@ -170,75 +146,23 @@ typedef struct
 
 
 
-typedef enum
-{
-  SD_STATE_RESET                  = 0x00000000U,  /*!< SD not yet initialized or disabled  */
-  SD_STATE_READY                  = 0x00000001U,  /*!< SD initialized and ready for use    */
-  SD_STATE_TIMEOUT                = 0x00000002U,  /*!< SD Timeout state                    */
-  SD_STATE_BUSY                   = 0x00000003U,  /*!< SD process ongoing                  */
-  SD_STATE_PROGRAMMING            = 0x00000004U,  /*!< SD Programming State                */
-  SD_STATE_RECEIVING              = 0x00000005U,  /*!< SD Receinving State                 */
-  SD_STATE_TRANSFER               = 0x00000006U,  /*!< SD Transfert State                  */
-  SD_STATE_ERROR                  = 0x0000000FU   /*!< SD is in error state                */
-}SD_State;
-
-typedef enum
-{
-  
-  SD_CARD_INACTIVE,
-  SD_CARD_IDLE,
-  SD_CARD_READY,
-  SD_CARD_IDENTIFICATION,
-  SD_CARD_STANDBY,
-  SD_CARD_TRANSFER,
-  SD_CARD_SENDING,
-  SD_CARD_RECEIVING,
-  SD_CARD_PROGRAMMING,
-  SD_CARD_DISCONNECTED,
-  SD_CARD_ERROR                     = 0x000000FFU,
-
-}SD_CAR_STATE_E;
 
 
-typedef struct
-{
-  u32 CardType;                     /*!< Specifies the card Type                         */
-  
-  u32 CardVersion;                  /*!< Specifies the card version                      */
 
-  u32 Class;                        /*!< Specifies the class of the card class           */
 
-  u32 RelCardAdd;                   /*!< Specifies the Relative Card Address             */
-  
-  u32 BlockNbr;                     /*!< Specifies the Card Capacity in blocks           */
 
-  u32 BlockSize;                    /*!< Specifies one block size in bytes               */
-  
-  u32 LogBlockNbr;                  /*!< Specifies the Card logical Capacity in blocks   */
-
-  u32 LogBlockSize;                 /*!< Specifies logical block size in bytes           */
-
-}SD_CarInf_T;
-
-typedef struct
-{
-  volatile u8  DataBusWidth;           /*!< Shows the currently defined data bus width                 */
-  volatile u8  SecuredMode;            /*!< Card is in secured mode of operation                       */
-  volatile u16 CardType;               /*!< Carries information about card type                        */
-  volatile u32 ProtectedAreaSize;      /*!< Carries information about the capacity of protected area   */
-  volatile u8  SpeedClass;             /*!< Carries information about the speed class of the card      */
-  volatile u8  PerformanceMove;        /*!< Carries information about the card's performance move      */
-  volatile u8  AllocationUnitSize;     /*!< Carries information about the card's allocation unit size  */
-  volatile u16 EraseSize;              /*!< Determines the number of AUs to be erased in one operation */
-  volatile u8  EraseTimeout;           /*!< Determines the timeout for any number of AU erase          */
-  volatile u8  EraseOffset;            /*!< Carries information about the erase offset                 */
-
-}SD_CardStatusTypeDef;
 
 /** HW INTERFACE **/
 #define SD_CLK_SPEED_SET	SPI_SET_SPEED_CMD
 #define SD_CLK_SPEED_HIGH	SPI_CLK_PRE4		// max:25M
 #define SD_CLK_SPEED_LOW	SPI_CLK_PRE256		// max:400k
+
+#define MAX_RETRY_TIME			0xff
+#define HOST_SUPPORT_HIGH_CAP	1		//if host supports high capacity HCS=1, else HCS = 0 
+#define SD_BLOCK_SIZE			512
+
+
+
 
 
 /*============== SD Respond============*/
@@ -252,6 +176,9 @@ typedef enum{
 	SD_SPI_R3 = 3,
 	SD_SPI_R7 = 7,
 }SD_SPI_Rx_type;
+
+
+
 /** SPI MODE R1   8 bits **/
 #define SPI_R1_IDLE_STATE   	BIT(0)
 #define SPI_R1_ERASE_RESET    	BIT(1)
@@ -261,13 +188,6 @@ typedef enum{
 #define SPI_R1_ADDR_ERR		   	BIT(5)
 #define SPI_R1_PARAM_ERR	   	BIT(6)
 #define SPI_R1_ALWAYS_0  	 	BIT(7)
-/** SPI MODE R7   40 bits **/
-typedef struct{
-	u8 r1;
-	u8 cmd_version;
-	u8 voltage;
-	u8 check;
-}__sd_spi_r7;
 
 
 /***   IO CTROL CMD ***/

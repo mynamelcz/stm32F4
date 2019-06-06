@@ -56,6 +56,7 @@ static void flash_write_enable(void)
 	spi_cs_ctr(1);
 }
 /******	 Ð´½ûÖ¹ 	******/
+#if 0
 static void flash_write_disable(void)
 {
 	u8 cmd_buf[1]={FLASH_WIRT_DISABLE};
@@ -63,7 +64,7 @@ static void flash_write_disable(void)
 	spi_write_buf(cmd_buf, 1);
 	spi_cs_ctr(1);
 }
-
+#endif
 /******	 ¶Á×´Ì¬REG 	******/
 static u8 flash_read_status_register(void)
 {
@@ -127,6 +128,7 @@ static void flash_sector_erase(u32 sector_addr)
 
 /******	 BLK64 ²Á³ý 	******/		
 /*1.µØÖ·Òª 64k ¶ÔÆë		*/
+#if 0
 static void flash_block64_erase(u32 block64_addr)
 {
 	if(block64_addr& (FLASH_BLOCK_SIZE-1)){		
@@ -144,6 +146,7 @@ static void flash_block64_erase(u32 block64_addr)
 	spi_cs_ctr(1);
 	flash_wait_write_end();
 }
+#endif
 
 /******	 ÕûÆ¬ ²Á³ý 	******/		
 static void flash_chip_erase(void)
@@ -219,6 +222,8 @@ static void flash_read_buf(u8 *buf, u32 addr, u32 len)
 	spi_read_buf(buf,len);
 	spi_cs_ctr(1);	
 }
+
+#if(0)
 static void flash_fast_read_buf(u8 *buf, u32 addr, u32 len)
 {
 	u8 cmd_buf[5];
@@ -232,6 +237,9 @@ static void flash_fast_read_buf(u8 *buf, u32 addr, u32 len)
 	spi_read_buf(buf,len);
 	spi_cs_ctr(1);	
 }
+#endif
+
+
 static void flash_erase_sectors(u32 start_sec, u32 sct_num)
 {
 	while(sct_num--){		
