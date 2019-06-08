@@ -210,13 +210,16 @@ void SDIO_IRQHandler(void)
 /**
   * @brief This function handles DMA2 stream7 global interrupt.
   */
+
+extern void SD_ProcessDMAIRQ(void);
 void DMA2_Stream7_IRQHandler(void)
 {	
 	if(LL_DMA_IsActiveFlag_TC7(DMA2)){
 	//Transfer Complete
 		LL_DMA_ClearFlag_TC7(DMA2);
-
-	}		
+	}
+	SD_ProcessDMAIRQ();
+	
 }	
 
 /******************************************************************************/

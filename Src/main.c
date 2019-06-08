@@ -76,7 +76,7 @@ int main(void)
 
 
    spi_flash_test();
-   fs_test();
+//   fs_test();
 
   /* Start scheduler */
 //   task_startup();

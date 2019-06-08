@@ -1,7 +1,7 @@
 #ifndef __SDIO_SD_H
-#define __SDIO_SD_H
+#define __SDIO_SD_H 
 
-#if 0
+#if 1
 
 #include "includes.h"
 
@@ -248,7 +248,7 @@ typedef struct
   *        SDIO_APP_CMD should be sent before sending these commands. 
   */
 #define SD_CMD_APP_SD_SET_BUSWIDTH                 ((u8)6)  /*!< For SD Card only */
-#define SD_CMD_SD_APP_STAUS                        ((u8)13) /*!< For SD Card only */
+#define SD_CMD_SD_APP_STAUSE                        ((u8)13) /*!< For SD Card only */
 #define SD_CMD_SD_APP_SEND_NUM_WRITE_BLOCKS        ((u8)22) /*!< For SD Card only */
 #define SD_CMD_SD_APP_OP_COND                      ((u8)41) /*!< For SD Card only */
 #define SD_CMD_SD_APP_SET_CLR_CARD_DETECT          ((u8)42) /*!< For SD Card only */
@@ -296,20 +296,35 @@ typedef struct
 #define SDIO_SECURE_DIGITAL_IO_COMBO_CARD          ((u32)0x00000006)
 #define SDIO_HIGH_CAPACITY_MMC_CARD                ((u32)0x00000007)
 
-/**
-  * @}
-  */ 
-  
-/** @defgroup STM324x7I_EVAL_SDIO_SD_Exported_Macros
-  * @{
-  */ 
-/**
-  * @}
-  */ 
 
-/** @defgroup STM324x7I_EVAL_SDIO_SD_Exported_Functions
-  * @{
-  */ 
+
+
+
+
+
+
+typedef struct
+{
+//	__sdio_ctr_obj  *hd_io;
+//	__sd_inf_t		sd_inf;
+	
+	SD_Error (*init)(void);
+    u8  (*status)(void);
+	u8  (*read)(u8 *buf, u32 start_blk, u16 blk_bum);
+	u8  (*write)(const u8 *buf,u32 start_blk, u16 blk_bum);
+	void (*erase)(u32 start_sec, u32 sct_num);
+	bool (*io_ctr)(u8 cmd, void *buff);		
+
+}__sdio_sd_obj;
+
+
+extern __sdio_sd_obj sdio_sd_obj;
+
+
+
+
+
+
 void SD_DeInit(void);
 SD_Error SD_Init(void);
 SDTransferState SD_GetStatus(void);

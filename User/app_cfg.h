@@ -46,7 +46,7 @@
 
 
 //======= DEV =======//
-//#define __DBUG_DEV_SPI_SD
+#define __DBUG_DEV_SPI_SD
 #define __DBUG_SPI_FLASH
 
 

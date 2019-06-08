@@ -1,6 +1,53 @@
 #include "spi_sd.h"
 #include "bsp_spi.h"
 
+
+/*******	DATA TRAN	TOKEN 	*******/
+#define SD_START_DATA_SINGLE_BLOCK_READ    0xFE  //	Start Single Block Read 
+#define SD_START_DATA_MULTIPLE_BLOCK_READ  0xFE  // Start Multiple Block Read 
+#define SD_START_DATA_SINGLE_BLOCK_WRITE   0xFE  //	Start Single Block Write 
+#define SD_START_DATA_MULTIPLE_BLOCK_WRITE 0xFC  // Start Multiple Block Write 
+#define SD_STOP_DATA_MULTIPLE_BLOCK_WRITE  0xFD  // Stop Multiple Block Write 
+
+
+
+/*******	SD 	CMD 	 	*******/
+#define SD_CMD_GO_IDLE_STATE          0   /*!< CMD0 = 0x40 */
+#define SD_CMD_SEND_OP_COND           1   /*!< CMD1 = 0x41 */
+#define SD_CMD_IF_COND                8   /*!< CMD8 = 0x48 */
+#define SD_CMD_SEND_CSD               9   /*!< CMD9 = 0x49 */
+#define SD_CMD_SEND_CID               10  /*!< CMD10 = 0x4A */
+#define SD_CMD_STOP_TRANSMISSION      12  /*!< CMD12 = 0x4C */
+#define SD_CMD_SEND_STATUS            13  /*!< CMD13 = 0x4D */
+#define SD_CMD_SET_BLOCKLEN           16  /*!< CMD16 = 0x50 */
+#define SD_CMD_READ_SINGLE_BLOCK      17  /*!< CMD17 = 0x51 */
+#define SD_CMD_READ_MULTIPLE_BLOCK    18  /*!< CMD18 = 0x52 */
+#define SD_CMD_SEND_NUM_WR_BLOCKS     22  /*!< CMD22 = 0x56 */
+#define SD_CMD_SET_BLOCK_COUNT        23  /*!< CMD23 = 0x57 */
+#define SD_CMD_WRITE_SINGLE_BLOCK     24  /*!< CMD24 = 0x58 */
+#define SD_CMD_WRITE_MULTIPLE_BLOCK   25  /*!< CMD25 = 0x59 */
+#define SD_CMD_PROG_CSD               27  /*!< CMD27 = 0x5B */
+#define SD_CMD_SET_WRITE_PROT         28  /*!< CMD28 = 0x5C */
+#define SD_CMD_CLR_WRITE_PROT         29  /*!< CMD29 = 0x5D */
+#define SD_CMD_SEND_WRITE_PROT        30  /*!< CMD30 = 0x5E */
+#define SD_CMD_SD_ERASE_GRP_START     32  /*!< CMD32 = 0x60 */
+#define SD_CMD_SD_ERASE_GRP_END       33  /*!< CMD33 = 0x61 */
+#define SD_CMD_UNTAG_SECTOR           34  /*!< CMD34 = 0x62 */
+#define SD_CMD_ERASE_GRP_START        35  /*!< CMD35 = 0x63 */
+#define SD_CMD_ERASE_GRP_END          36  /*!< CMD36 = 0x64 */
+#define SD_CMD_UNTAG_ERASE_GROUP      37  /*!< CMD37 = 0x65 */
+#define SD_CMD_ERASE                  38  /*!< CMD38 = 0x66 */
+//------------------------------------------------------------
+#define SD_ACMD_SEND_OP_COND     	  41  /*!< ACMD41 */
+#define SD_ACMD_SET_CLR_CARD_DETECT   42  /*!< ACMD42= 0x6A */
+#define SD_CMD_APP_CMD                55  /*!< CMD55 = 0x77 */
+#define SD_CMD_READ_OCR               58  /*!< CMD58 = 0x7A */
+#define SD_CMD_CRC_ON_OFF             59  /*!< CMD59 = 0x7B */
+
+
+
+
+
 static __spi_sd_obj *this_obj = NULL;
 
 
@@ -284,7 +331,7 @@ static spi_sd_err sd_get_csd_reg(SD_CSD_T *sd_csd)
 
 }
 
-
+#if 0
 static spi_sd_err sd_get_cid_reg(SD_CID_T *sd_cid)
 {
 	spi_sd_err res = SD_NO_ERR;
@@ -371,8 +418,7 @@ static spi_sd_err sd_get_cid_reg(SD_CID_T *sd_cid)
 	return res;	
 }	
 
-
-
+#endif
 
 
 
@@ -381,7 +427,7 @@ spi_sd_err sd_getcard_inf(__sd_inf_t *sd_inf)
 	spi_sd_err res = SD_NO_ERR;
 	SD_Type sd_type = sd_inf->type;
 	res = sd_get_csd_reg(&(this_obj->sd_inf.CSD));
-	res = sd_get_cid_reg(&(this_obj->sd_inf.CID));
+//	res = sd_get_cid_reg(&(this_obj->sd_inf.CID));
 
 	if (sd_type == SD_TYPE_SDHC)
 	{

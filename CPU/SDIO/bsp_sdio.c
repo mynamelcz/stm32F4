@@ -137,14 +137,34 @@ static void sdio_init(void)
 
 
 
-void sdio_dma_irq_hdl(void)
-{
 
-}
-void sdi_per_irq_hdl(void)
-{
 
-}
+
+
+
+
+void SD_ProcessDMAIRQ(void)
+{
+	
+	if(LL_DMA_IsActiveFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM)){
+		LL_DMA_ClearFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM);
+	}
+} 
+
+
+
+
+
+//void sdio_dma_irq_hdl(void)
+//{
+
+//}
+//void sdi_per_irq_hdl(void)
+//{
+
+//}
+
+
 
 
 

@@ -705,7 +705,7 @@ typedef struct
                                              SDIO_CMD_CPSMEN   | SDIO_CMD_SDIOSUSPEND))
 
 /* SDIO Initialization Frequency (400KHz max) */
-#define SDIO_INIT_CLK_DIV     ((uint8_t)0x76)
+ #define SDIO_INIT_CLK_DIV     ((uint8_t)0x76)
 
 /* SDIO Data Transfer Frequency (25MHz max) */
 #define SDIO_TRANSFER_CLK_DIV ((uint8_t)0x0)
@@ -889,7 +889,7 @@ typedef struct
   *            @arg SDIO_IT_SDIOIT:   SD I/O interrupt received interrupt
   * @retval The new state of SDIO_IT (SET or RESET).
   */
-#define __SDIO_GET_IT  (__INSTANCE__, __INTERRUPT__)  (((__INSTANCE__)->STA &(__INTERRUPT__)) == (__INTERRUPT__))
+#define __SDIO_GET_IT(__INSTANCE__, __INTERRUPT__)  (((__INSTANCE__)->STA &(__INTERRUPT__)) == (__INTERRUPT__))
 
 /**
   * @brief  Clears the SDIO's interrupt pending bits.

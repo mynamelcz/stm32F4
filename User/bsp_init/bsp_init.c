@@ -36,7 +36,7 @@ void bsp_init(void)
     uart1_init(); 
 	
 	flash_bsp_init();
-	spi_sd_bsp_init();
+	//spi_sd_bsp_init();
 	sdio_sd_bsp_init();
 }
 
@@ -100,7 +100,7 @@ static void sdio_sd_bsp_init(void)
 	u8 res = 0;
 	spi_sd_cs_gpio_init();
     sdio_ctr_obj.init();
-
+	sdio_sd_obj.init();
 }
 
 
