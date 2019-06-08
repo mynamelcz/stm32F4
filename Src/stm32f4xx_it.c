@@ -81,7 +81,7 @@ void TIM2_IRQHandler(void)
 	cnt++;
 	list_for_each_entry(pos, &TIM2_IRQHandler_ListHead, list){
 		if(pos->hdl_fun){
-			if(pos->cnt++ >= pos->time){
+			if(++pos->cnt >= pos->time){
 				pos->hdl_fun();
 				pos->cnt = 0;
 			}

@@ -197,7 +197,10 @@ void SDIO_ITConfig(uint32_t SDIO_IT, FunctionalState NewState)
   } 
 }
 
-
+u32 SDIO_ReadData(void)
+{ 
+  SDIO_ReadFIFO(SDIO);
+}
 
 
 
@@ -255,12 +258,12 @@ void sdio_send_cmd(u32 cmd, u32 arg, u32 res)
   SDIO_SendCommand(SDIO, &SDIO_CmdInitStructure);
 }
 
-void sdio_data_cfg(u32 len,u32 dir)
+void sdio_data_cfg(u32 len,u32 dir, u32 block_sz)
 {
   SDIO_DataInitStructure.DataLength = len;
   SDIO_DataInitStructure.TransferDir = dir;
   SDIO_DataInitStructure.DataTimeOut = SD_DATATIMEOUT;
-  SDIO_DataInitStructure.DataBlockSize = SDIO_DATABLOCK_SIZE_512B;
+  SDIO_DataInitStructure.DataBlockSize = block_sz;
   SDIO_DataInitStructure.TransferMode = SDIO_TRANSFER_MODE_BLOCK;
   SDIO_DataInitStructure.DPSM = SDIO_DPSM_ENABLE;
   SDIO_ConfigData(SDIO, &SDIO_DataInitStructure);
@@ -985,6 +988,211 @@ SD_Error SD_GetCardInfo(SD_CardInfo *cardinfo)
   return(errorstatus);
 }
 
+SD_Error SD_SelectDeselect(uint64_t addr)
+{
+  SD_Error errorstatus = SD_OK;
+  /*!< Send CMD7 SDIO_SEL_DESEL_CARD */
+  sdio_send_cmd(SD_CMD_SEL_DESEL_CARD, (u32)addr, SDIO_RESPONSE_SHORT);
+  errorstatus = CmdResp1Error(SD_CMD_SEL_DESEL_CARD);
+  return(errorstatus);
+}
+
+
+SD_Error SD_EnableWideBusOperation(u32 WideMode)
+{
+  SD_Error errorstatus = SD_OK;
+
+  /*!< MMC Card doesn't support this feature */
+  if (SDIO_MULTIMEDIA_CARD == CardType){
+    errorstatus = SD_UNSUPPORTED_FEATURE;
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }else if ((SDIO_STD_CAPACITY_SD_CARD_V1_1 == CardType) ||
+			(SDIO_STD_CAPACITY_SD_CARD_V2_0 == CardType) || 
+			(SDIO_HIGH_CAPACITY_SD_CARD 	== CardType)){
+				
+    if (SDIO_BUS_WIDE_8B == WideMode){
+      errorstatus = SD_UNSUPPORTED_FEATURE;
+	  ERR_printf(errorstatus);
+      return(errorstatus);
+    }else if (SDIO_BUS_WIDE_4B == WideMode){
+      errorstatus = SDEnWideBus(ENABLE);
+      if (SD_OK == errorstatus){
+        /*!< Configure the SDIO peripheral */
+		  sdio_set_high_speed(SDIO_BUS_WIDE_4B); 
+		  sd_printf("SDIO BUS Width 4_Bit\n");
+      }
+    }else{
+      errorstatus = SDEnWideBus(DISABLE);
+      if (SD_OK == errorstatus){
+        /*!< Configure the SDIO peripheral */
+		  sdio_set_high_speed(SDIO_BUS_WIDE_1B);
+		  sd_printf("SDIO BUS Width 1_Bit\n");
+      }
+    }
+  }
+  return(errorstatus);
+}
+/*
+* 设置SD卡总线宽度
+*/
+static SD_Error SDEnWideBus(FunctionalState NewState)
+{
+  SD_Error errorstatus = SD_OK;
+  u32 scr[2] = {0, 0};
+  if (SDIO_GetResponse(SDIO, SDIO_RESP1) & SD_CARD_LOCKED){
+    errorstatus = SD_LOCK_UNLOCK_FAILED;
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+
+  /*!< Get SCR Register */
+  errorstatus = FindSCR(RCA, scr);
+
+  if (errorstatus != SD_OK){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+
+  /*!< If wide bus operation to be enabled */
+  if (NewState == ENABLE)
+  {
+    /*!< If requested card supports wide bus operation */
+    if ((scr[1] & SD_WIDE_BUS_SUPPORT) != SD_ALLZERO)
+    {
+      /*!< Send CMD55 APP_CMD with argument as card's RCA.*/
+	  sdio_send_cmd(SD_CMD_APP_CMD, (u32) RCA << 16, SDIO_RESPONSE_SHORT);
+      errorstatus = CmdResp1Error(SD_CMD_APP_CMD);
+		
+      if (errorstatus != SD_OK){
+		ERR_printf(errorstatus);
+        return(errorstatus);
+      }
+
+      /*!< Send ACMD6 APP_CMD with argument as 2 for wide bus mode */
+	  sdio_send_cmd(SD_CMD_APP_SD_SET_BUSWIDTH, (u32) 0x2, SDIO_RESPONSE_SHORT);
+	  
+      errorstatus = CmdResp1Error(SD_CMD_APP_SD_SET_BUSWIDTH);
+      if (errorstatus != SD_OK){
+		ERR_printf(errorstatus);  
+        return(errorstatus);
+      }
+      return(errorstatus);
+    }
+    else{
+      errorstatus = SD_REQUEST_NOT_APPLICABLE;
+	  ERR_printf(errorstatus);
+      return(errorstatus);
+    }
+  }   /*!< If wide bus operation to be disabled */
+  else
+  {
+    /*!< If requested card supports 1 bit mode operation */
+    if ((scr[1] & SD_SINGLE_BUS_SUPPORT) != SD_ALLZERO)
+    {
+      /*!< Send CMD55 APP_CMD with argument as card's RCA.*/
+	  sdio_send_cmd(SD_CMD_APP_CMD, (u32)RCA << 16, SDIO_RESPONSE_SHORT);
+		
+      errorstatus = CmdResp1Error(SD_CMD_APP_CMD);
+      if (errorstatus != SD_OK){
+		ERR_printf(errorstatus);
+        return(errorstatus);
+      }
+
+      /*!< Send ACMD6 APP_CMD with argument as 2 for wide bus mode */
+	  sdio_send_cmd(SD_CMD_APP_SD_SET_BUSWIDTH, (u32)0x00, SDIO_RESPONSE_SHORT);
+	  
+      errorstatus = CmdResp1Error(SD_CMD_APP_SD_SET_BUSWIDTH);
+      if (errorstatus != SD_OK){
+		ERR_printf(errorstatus);
+        return(errorstatus);
+      }  
+      return(errorstatus);
+    }else{
+      errorstatus = SD_REQUEST_NOT_APPLICABLE;
+	  ERR_printf(errorstatus);
+      return(errorstatus);
+    }
+  }
+}
+
+static SD_Error FindSCR(u16 rca, u32 *pscr)
+{
+  u32 index = 0;
+  SD_Error errorstatus = SD_OK;
+  u32 tempscr[2] = {0, 0};
+
+  /*!< Set Block Size To 8 Bytes */
+  /*!< Send CMD55 APP_CMD with argument as card's RCA */
+  sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)8, SDIO_RESPONSE_SHORT);
+ 
+  errorstatus = CmdResp1Error(SD_CMD_SET_BLOCKLEN);
+  if (errorstatus != SD_OK){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+
+  /*!< Send CMD55 APP_CMD with argument as card's RCA */
+  sdio_send_cmd(SD_CMD_APP_CMD, (u32)RCA << 16, SDIO_RESPONSE_SHORT);
+  errorstatus = CmdResp1Error(SD_CMD_APP_CMD);
+  if (errorstatus != SD_OK){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+
+  
+  sdio_data_cfg(8, SDIO_TRANSFER_DIR_TO_SDIO, SDIO_DATABLOCK_SIZE_8B);
+  /*!< Send ACMD51 SD_APP_SEND_SCR with argument as 0 */
+  sdio_send_cmd(SD_CMD_SD_APP_SEND_SCR, (u32)0x0, SDIO_RESPONSE_SHORT);
+  
+  errorstatus = CmdResp1Error(SD_CMD_SD_APP_SEND_SCR);
+  if (errorstatus != SD_OK){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+
+  while (!(SDIO->STA & (SDIO_FLAG_RXOVERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_DBCKEND | SDIO_FLAG_STBITERR)))
+  {
+    if (SDIO_GetFlagStatus(SDIO_FLAG_RXDAVL) != RESET){
+      *(tempscr + index) = SDIO_ReadData();
+		sd_printf("SCR[%d]:0x%x\n",index, tempscr[index]);
+		index++;
+    }
+  }
+  if (SDIO_GetFlagStatus(SDIO_FLAG_DTIMEOUT) != RESET){
+    SDIO_ClearFlag(SDIO_FLAG_DTIMEOUT);
+    errorstatus = SD_DATA_TIMEOUT;
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+  else if (SDIO_GetFlagStatus(SDIO_FLAG_DCRCFAIL) != RESET){
+    SDIO_ClearFlag(SDIO_FLAG_DCRCFAIL);
+    errorstatus = SD_DATA_CRC_FAIL;
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+  else if (SDIO_GetFlagStatus(SDIO_FLAG_RXOVERR) != RESET){
+    SDIO_ClearFlag(SDIO_FLAG_RXOVERR);
+    errorstatus = SD_RX_OVERRUN;
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+  else if (SDIO_GetFlagStatus(SDIO_FLAG_STBITERR) != RESET){
+    SDIO_ClearFlag(SDIO_FLAG_STBITERR);
+    errorstatus = SD_START_BIT_ERR;
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+  /*!< Clear all the static flags */
+  SDIO_ClearFlag(SDIO_STATIC_FLAGS);
+
+  *(pscr + 1) = ((tempscr[0] & SD_0TO7BITS) << 24) | ((tempscr[0] & SD_8TO15BITS) << 8) | ((tempscr[0] & SD_16TO23BITS) >> 8) | ((tempscr[0] & SD_24TO31BITS) >> 24);
+
+  *(pscr) = ((tempscr[1] & SD_0TO7BITS) << 24) | ((tempscr[1] & SD_8TO15BITS) << 8) | ((tempscr[1] & SD_16TO23BITS) >> 8) | ((tempscr[1] & SD_24TO31BITS) >> 24);
+
+  return(errorstatus);
+}
+
 
 SD_Error SD_Init(void)
 {
@@ -1009,19 +1217,15 @@ SD_Error SD_Init(void)
   errorstatus = SD_GetCardInfo(&SDCardInfo);
   
   
-  while(1);
-
-  if (errorstatus == SD_OK)
-  {
+  if (errorstatus == SD_OK){
     /*----------------- Select Card --------------------------------*/
     errorstatus = SD_SelectDeselect((uint32_t) (SDCardInfo.RCA << 16));
   }
-
-  if (errorstatus == SD_OK)
-  {
+  if (errorstatus == SD_OK){
      errorstatus = SD_EnableWideBusOperation(SDIO_BUS_WIDE_4B);
-  }  
-
+  }else{
+	 ERR_printf(errorstatus);
+  }
   return(errorstatus);
 }  
   
