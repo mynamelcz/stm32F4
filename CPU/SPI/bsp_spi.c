@@ -148,7 +148,7 @@ static bool spi2_ioctr(u8 cmd, void *buf)
 			 dat8 = *((u16 *)(buf));
 			 dat8 %= (SPI_CLK_PRE256+1);
 	         SPI2->CR1 = (u16)((SPI2->CR1 & 0xFFC7)|(dat8<<3));
-		     bsp_printf("[SPI2 CLK]:%d KHz\n",21000>>(dat8+1));
+		     bsp_printf("[SPI2 CLK]:%d KHz\n",42000>>(dat8+1));
 			 res = true;
 			 return res;
 		case SPI_SET_SPEED_LOW:

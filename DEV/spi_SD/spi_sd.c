@@ -516,8 +516,7 @@ static spi_sd_err sd_identification(void)
 	 }else if((rx_buf[3] == 0x01)&&(rx_buf[4]==0xAA)){
 		res = identification_v2v3();
 	 }else{
-        ERR_printf(0);
-		 res = SD_ERR_CHECK_VOL;
+        res = identification_v2v3();
 	 }
 	 return res;
 }
@@ -739,6 +738,9 @@ static spi_sd_err sd_init(__spi_ctr_obj  *hd_io)
 	sd_dis_select();
 	sd_speed_set(SD_CLK_SPEED_HIGH);
     sd_getcard_inf(&this_obj->sd_inf);
+	
+	spi_sd_obj.sd_inf.block_sz = SD_BLOCK_SIZE;
+	
 	sd_set_state(SD_STA_ON_LINE);
 	return SD_NO_ERR;
 }

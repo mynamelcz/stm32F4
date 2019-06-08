@@ -172,14 +172,18 @@ u32 vfs_get_dev_inf(const TCHAR* path)
 		ERR_printf(res);	
 		return res;
 	}
-	total_clst = (fs->n_fatent-2) * fs->csize;
+	total_clst = (fs->n_fatent-2);
 	
-	free_sz_kb  = (free_clst  * fs->csize)<<2;
-	tatal_sz_kb = (total_clst * fs->csize)<<2;
+	free_sz_kb  = free_clst  * (fs->csize * fs->ssize / 1024);
+	tatal_sz_kb = total_clst * (fs->csize * fs->ssize / 1024);
 	
 
 	
 	vfs_printf("dev fs type: %d\n", fs->fs_type);
+	
+	vfs_printf("csize: %d\n", fs->csize);
+	vfs_printf("ssize: %d\n", fs->ssize);
+	
 	vfs_printf("n_fatent: %d\n", fs->n_fatent);
 	vfs_printf("dev tatal cluster num: %d\n", total_clst);
 	vfs_printf("dev free  cluster num: %d\n", free_clst);
