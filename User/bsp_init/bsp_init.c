@@ -98,7 +98,6 @@ static void spi_sd_cs_ctr(u8 en)
 static void sdio_sd_bsp_init(void)
 {
 	u8 res = 0;
-	spi_sd_cs_gpio_init();
     sdio_ctr_obj.init();
 	sdio_sd_obj.init();
 }

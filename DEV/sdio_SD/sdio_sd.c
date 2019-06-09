@@ -51,7 +51,7 @@
 #define SD_SINGLE_BUS_SUPPORT           ((u32)0x00010000)
 #define SD_CARD_LOCKED                  ((u32)0x02000000)
 
-#define SD_DATATIMEOUT                  ((u32)0xFFFFFFFF)
+#define SD_DATATIMEOUT                  ((u32)0xFFFFFF)
 #define SD_0TO7BITS                     ((u32)0x000000FF)
 #define SD_8TO15BITS                    ((u32)0x0000FF00)
 #define SD_16TO23BITS                   ((u32)0x00FF0000)
@@ -94,7 +94,10 @@ static u32 CSD_Tab[4], CID_Tab[4], RCA = 0;
 static u8 SDSTATUS_Tab[16];
 volatile u32 StopCondition = 0;
 volatile SD_Error TransferError = SD_OK;
-volatile u32 TransferEnd = 0, DMAEndOfTransfer = 0;
+volatile u32 DMAEndOfTransfer = 0;
+
+volatile u32 TransferISEnd = 0;
+
 SD_CardInfo SDCardInfo;
 
 
@@ -203,30 +206,20 @@ u32 SDIO_ReadData(void)
 }
 
 
+extern void sdio_dma_send(u32 *src_addr, u32 bufferSize);
+extern void sdio_dma_receive(u32 *src_addr, u32 bufferSize);
 
 
+void SD_LowLevel_DMA_RxConfig(uint32_t *BufferDST, uint32_t BufferSize)
+{
+	sdio_dma_receive(BufferDST, BufferSize);
+}
+void SD_LowLevel_DMA_TxConfig(uint32_t *BufferSRC, uint32_t BufferSize)
+{
+	sdio_dma_send(BufferSRC, BufferSize);
+}
 
 
-//u8 sdio_get_state(u32 flag)
-//{
-//	u8 state;
-//	if(__SDIO_GET_FLAG(SDIO, flag)){
-//	
-//	}
-//	return state;
-//}
-
-//void sdio_clear_flag(u32 sdio_flg)
-//{
-//	__SDIO_CLEAR_FLAG(SDIO, sdio_flg);
-//}
-
-//u32 sdio_read_data(void)
-//{
-//	u32 data;
-//	data = SDIO_ReadFIFO(SDIO);
-//	return data;
-//}
 
 void sdio_set_low_speed(u32 bus_wide)
 {
@@ -272,8 +265,6 @@ void sdio_data_cfg(u32 len,u32 dir, u32 block_sz)
 
 /**
   * @brief  Checks for error conditions for CMD0.
-  * @param  None
-  * @retval SD_Error: SD Card Error code.
   */
 static SD_Error CmdError(void)
 {
@@ -300,8 +291,6 @@ static SD_Error CmdError(void)
 
 /**
   * @brief  Checks for error conditions for R7 response.
-  * @param  None
-  * @retval SD_Error: SD Card Error code.
   */
 static SD_Error CmdResp7Error(void)
 {
@@ -319,7 +308,7 @@ static SD_Error CmdResp7Error(void)
   if ((timeout == 0) || (status & SDIO_FLAG_CTIMEOUT)){
     /*!< Card is not V2.0 complient or card does not support the set voltage range */
     errorstatus = SD_CMD_RSP_TIMEOUT;
-	ERR_printf(SD_CMD_RSP_TIMEOUT);
+	ERR_printf(errorstatus);
     SDIO_ClearFlag(SDIO_FLAG_CTIMEOUT);
     return(errorstatus);
   }
@@ -334,8 +323,6 @@ static SD_Error CmdResp7Error(void)
 
 /**
   * @brief  Checks for error conditions for R1 response.
-  * @param  cmd: The sent command index.
-  * @retval SD_Error: SD Card Error code.
   */
 static SD_Error CmdResp1Error(uint8_t cmd)
 {
@@ -1194,6 +1181,329 @@ static SD_Error FindSCR(u16 rca, u32 *pscr)
 }
 
 
+
+
+SD_Error SD_ReadBlock(u8 *readbuff, uint64_t ReadAddr, u16 BlockSize)
+{
+  SD_Error errorstatus = SD_OK;
+#if defined (SD_POLLING_MODE) 
+  u32 count = 0, *tempbuff = (u32 *)readbuff;
+#endif
+
+  TransferError = SD_OK;
+  TransferISEnd = 0;
+  StopCondition = 0;
+
+  SDIO->DCTRL = 0x0;
+
+#if defined (SD_DMA_MODE)
+  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR);
+  __SDIO_DMA_ENABLE(SDIO);
+  SD_LowLevel_DMA_RxConfig((u32 *)readbuff, BlockSize);
+#endif
+
+  if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
+  {
+    BlockSize = 512;
+    ReadAddr /= 512;
+  }
+
+
+  
+  /* Set Block Size for Card */ 
+  sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)BlockSize, SDIO_RESPONSE_SHORT);
+  
+  errorstatus = CmdResp1Error(SD_CMD_SET_BLOCKLEN);
+
+  if (SD_OK != errorstatus){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+  sdio_data_cfg(BlockSize, SDIO_TRANSFER_DIR_TO_SDIO, SDIO_DATABLOCK_SIZE_512B);
+  
+  /*!< Send CMD17 READ_SINGLE_BLOCK */
+  sdio_send_cmd(SD_CMD_READ_SINGLE_BLOCK, (u32)ReadAddr, SDIO_RESPONSE_SHORT);
+ 
+  errorstatus = CmdResp1Error(SD_CMD_READ_SINGLE_BLOCK);
+  if (errorstatus != SD_OK){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+
+#if defined (SD_POLLING_MODE)  
+  /*!< In case of single block transfer, no need of stop transfer at all.*/
+  /*!< Polling mode */
+  while (!(SDIO->STA &(SDIO_FLAG_RXOVERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_DBCKEND | SDIO_FLAG_STBITERR)))
+  {
+    if (sdio_get_state(SDIO_FLAG_RXFIFOHF) != RESET)
+    {
+      for (count = 0; count < 8; count++)
+      {
+        *(tempbuff + count) = sdio_read_data();
+      }
+      tempbuff += 8;
+    }
+  }
+
+  if (sdio_get_state(SDIO_FLAG_DTIMEOUT) != RESET)
+  {
+    sdio_clear_flag(SDIO_FLAG_DTIMEOUT);
+    errorstatus = SD_DATA_TIMEOUT;
+    return(errorstatus);
+  }
+  else if (sdio_get_state(SDIO_FLAG_DCRCFAIL) != RESET)
+  {
+    sdio_clear_flag(SDIO_FLAG_DCRCFAIL);
+    errorstatus = SD_DATA_CRC_FAIL;
+    return(errorstatus);
+  }
+  else if (sdio_get_state(SDIO_FLAG_RXOVERR) != RESET)
+  {
+    sdio_clear_flag(SDIO_FLAG_RXOVERR);
+    errorstatus = SD_RX_OVERRUN;
+    return(errorstatus);
+  }
+  else if (sdio_get_state(SDIO_FLAG_STBITERR) != RESET)
+  {
+    sdio_clear_flag(SDIO_FLAG_STBITERR);
+    errorstatus = SD_START_BIT_ERR;
+    return(errorstatus);
+  }
+  count = SD_DATATIMEOUT;
+  while ((sdio_get_state(SDIO_FLAG_RXDAVL) != RESET) && (count > 0))
+  {
+    *tempbuff = sdio_read_data();
+    tempbuff++;
+    count--;
+  }
+
+  /*!< Clear all the static flags */
+  sdio_clear_flag(SDIO_STATIC_FLAGS);
+
+#endif
+
+  return(errorstatus);
+}
+
+
+SD_Error SD_ReadMultiBlocks(u8 *readbuff, uint64_t ReadAddr, u16 BlockSize, u32 NumberOfBlocks)
+{
+  SD_Error errorstatus = SD_OK;
+  TransferError = SD_OK;
+  TransferISEnd = 0;
+  StopCondition = 1;
+	
+  SDIO->DCTRL = 0x0;
+
+
+
+	
+	
+  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR); 
+  __SDIO_DMA_ENABLE(SDIO);
+  SD_LowLevel_DMA_RxConfig((u32 *)readbuff, (NumberOfBlocks * BlockSize));
+  if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
+  {
+    BlockSize = 512;
+    ReadAddr /= 512;
+  }
+  /*!< Set Block Size for Card */
+  sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)BlockSize, SDIO_RESPONSE_SHORT);
+  errorstatus = CmdResp1Error(SD_CMD_SET_BLOCKLEN);
+  if (SD_OK != errorstatus){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+    
+  sdio_data_cfg(NumberOfBlocks * BlockSize, SDIO_TRANSFER_DIR_TO_SDIO, SDIO_DATABLOCK_SIZE_512B);
+  
+  /*!< Send CMD18 READ_MULT_BLOCK with argument data address */
+  sdio_send_cmd(SD_CMD_READ_MULT_BLOCK, (u32)ReadAddr, SDIO_RESPONSE_SHORT);
+  errorstatus = CmdResp1Error(SD_CMD_READ_MULT_BLOCK);
+  if (errorstatus != SD_OK){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }
+  
+  sd_printf("TransferEnd: %d    line:%d\n",TransferISEnd, __LINE__);
+
+  
+  return(errorstatus);
+}
+
+
+
+/**
+  * @brief  Aborts an ongoing data transfer.
+  * @param  None
+  * @retval SD_Error: SD Card Error code.
+  */
+SD_Error SD_StopTransfer(void)
+{
+  SD_Error errorstatus = SD_OK;
+  /*!< Send CMD12 STOP_TRANSMISSION  */
+  sdio_send_cmd(SD_CMD_STOP_TRANSMISSION, (u32)0, SDIO_RESPONSE_SHORT);    
+  errorstatus = CmdResp1Error(SD_CMD_STOP_TRANSMISSION);
+  return(errorstatus);
+}
+
+/**
+  * @brief  This function waits until the SDIO DMA data transfer is finished. 
+  *         This function should be called after SDIO_ReadMultiBlocks() function
+  *         to insure that all data sent by the card are already transferred by 
+  *         the DMA controller.
+  * @param  None.
+  * @retval SD_Error: SD Card Error code.
+  */
+SD_Error SD_WaitReadOperation(void)
+{
+  SD_Error errorstatus = SD_OK;
+  uint32_t timeout;
+
+  timeout = SD_DATATIMEOUT;
+  
+  while ((DMAEndOfTransfer == 0x00) && (TransferISEnd == 0) && (TransferError == SD_OK) && (timeout > 0))
+  {
+	  sd_printf("timeout:%d  line:%d\n",timeout, __LINE__);
+      timeout--;
+  }
+  
+  DMAEndOfTransfer = 0x00;
+  timeout = SD_DATATIMEOUT;
+  while(((SDIO->STA & SDIO_FLAG_RXACT)) && (timeout > 0))
+  {
+	sd_printf("timeout:%d  line:%d\n",timeout, __LINE__);
+    timeout--;  
+  }
+
+  if (StopCondition == 1){
+    errorstatus = SD_StopTransfer();
+    StopCondition = 0;
+  }
+  
+  if ((timeout == 0) && (errorstatus == SD_OK)){
+    errorstatus = SD_DATA_TIMEOUT;
+  }
+  
+  /*!< Clear all the static flags */
+  SDIO_ClearFlag(SDIO_STATIC_FLAGS);
+
+  if (TransferError != SD_OK){
+	ERR_printf(TransferError);
+    return(TransferError);
+  }else{
+    return(errorstatus);  
+  }
+}
+
+/**
+  * @brief  Returns the current card's status.
+  * @param  pcardstatus: pointer to the buffer that will contain the SD card 
+  *         status (Card Status register).
+  * @retval SD_Error: SD Card Error code.
+  */
+SD_Error SD_SendStatus(u32 *pcardstatus)
+{
+  SD_Error errorstatus = SD_OK;
+
+  if (pcardstatus == NULL){
+    errorstatus = SD_INVALID_PARAMETER;
+	ERR_printf(TransferError);
+    return(errorstatus);
+  }
+  sdio_send_cmd(SD_CMD_SEND_STATUS, (u32)RCA << 16, SDIO_RESPONSE_SHORT);    
+  
+  errorstatus = CmdResp1Error(SD_CMD_SEND_STATUS);
+  if (errorstatus != SD_OK){
+	ERR_printf(TransferError);
+    return(errorstatus);
+  }
+  *pcardstatus = SDIO_GetResponse(SDIO, SDIO_RESP1);
+  return(errorstatus);
+}
+
+u8 SD_Detect(void)
+{
+  volatile u8 status = SD_PRESENT;
+
+  /*!< Check GPIO to detect SD */
+//  if (GPIO_ReadInputDataBit(SD_DETECT_GPIO_PORT, SD_DETECT_PIN) != Bit_RESET)
+//  {
+//    status = SD_NOT_PRESENT;
+//  }
+  return status;
+}
+/**
+  * @brief  Returns the current card's state.
+  * @param  None
+  * @retval SDCardState: SD Card Error or SD Card Current State.
+  */
+SDCardState SD_GetState(void)
+{
+  uint32_t resp1 = 0;
+  
+  if(SD_Detect()== SD_PRESENT){
+    if (SD_SendStatus(&resp1) != SD_OK){
+	  ERR_printf(TransferError);
+      return SD_CARD_ERROR;
+    }
+    else{
+      return (SDCardState)((resp1 >> 9) & 0x0F);
+    }
+  }else{
+	ERR_printf(TransferError);
+    return SD_CARD_ERROR;
+  }
+}
+
+SDTransferState SD_GetStatus(void)
+{
+  SDCardState cardstate =  SD_CARD_TRANSFER;
+
+  cardstate = SD_GetState();
+  if (cardstate == SD_CARD_TRANSFER){
+    return(SD_TRANSFER_OK);
+  }else if(cardstate == SD_CARD_ERROR){
+    return (SD_TRANSFER_ERROR);
+  }else{
+    return(SD_TRANSFER_BUSY);
+  }
+}
+
+SD_Error sdio_read_blocks(u8 *readbuff, uint64_t ReadAddr, u16 BlockSize, u32 NumberOfBlocks)
+{
+	uint32_t timeout;
+	SD_Error Status;
+	timeout = SD_DATATIMEOUT;
+	if(NumberOfBlocks==0)return SD_OK;
+	if(NumberOfBlocks == 1){
+		Status = SD_ReadBlock(readbuff, ReadAddr, BlockSize);
+	}else{
+		Status = SD_ReadMultiBlocks(readbuff, ReadAddr, BlockSize, NumberOfBlocks);
+	}
+	
+	
+
+	if(Status == SD_OK){
+		Status = SD_WaitReadOperation();
+		if(Status == SD_OK){
+			while((SD_GetStatus() != SD_TRANSFER_OK)&&(--timeout));
+			if(timeout){
+				return SD_OK;
+			}
+		}		
+	}
+	ERR_printf(Status);
+	return Status;
+}
+
+
+
+
+
+
+
+u8 test_buf[1024];
 SD_Error SD_Init(void)
 {
   __IO SD_Error errorstatus = SD_OK;
@@ -1226,6 +1536,21 @@ SD_Error SD_Init(void)
   }else{
 	 ERR_printf(errorstatus);
   }
+/////////////////////////////////////////////////////////////
+//	SD_ReadBlock(test_buf, 0, 512);
+  
+  	
+   sd_printf("SDIO_FLAG_RXACT:%x  line:%d\n",(SDIO->STA &(1<<13)), __LINE__);
+   while(1);	
+  
+    sdio_read_blocks(test_buf, 0, 512, 2);
+    sd_puthex((const char *)test_buf, 1024);
+
+
+/////////////////////////////////////////////////////////////  
+  
+  
+  
   return(errorstatus);
 }  
   
@@ -1237,32 +1562,39 @@ SD_Error SD_ProcessIRQSrc(void)
   {
     TransferError = SD_OK;
     SDIO_ClearITPendingBit(SDIO_IT_DATAEND);
-    TransferEnd = 1;
+    TransferISEnd = 1;
+	sd_printf("TransferEnd: %d\n",TransferISEnd);
+	sd_printf("^^^^^^SDIO_IT_DATAEND\n");
   }  
   else if (SDIO_GetITStatus(SDIO_IT_DCRCFAIL) != RESET)
   {
     SDIO_ClearITPendingBit(SDIO_IT_DCRCFAIL);
     TransferError = SD_DATA_CRC_FAIL;
+	ERR_printf(TransferError);
   }
   else if (SDIO_GetITStatus(SDIO_IT_DTIMEOUT) != RESET)
   {
     SDIO_ClearITPendingBit(SDIO_IT_DTIMEOUT);
     TransferError = SD_DATA_TIMEOUT;
+	ERR_printf(TransferError);
   }
   else if (SDIO_GetITStatus(SDIO_IT_RXOVERR) != RESET)
   {
     SDIO_ClearITPendingBit(SDIO_IT_RXOVERR);
     TransferError = SD_RX_OVERRUN;
+	ERR_printf(TransferError);
   }
   else if (SDIO_GetITStatus(SDIO_IT_TXUNDERR) != RESET)
   {
     SDIO_ClearITPendingBit(SDIO_IT_TXUNDERR);
     TransferError = SD_TX_UNDERRUN;
+	ERR_printf(TransferError);
   }
   else if (SDIO_GetITStatus(SDIO_IT_STBITERR) != RESET)
   {
     SDIO_ClearITPendingBit(SDIO_IT_STBITERR);
     TransferError = SD_START_BIT_ERR;
+	ERR_printf(TransferError);
   }
 
   SDIO_ITConfig(SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND |
@@ -1273,7 +1605,10 @@ SD_Error SD_ProcessIRQSrc(void)
 
 
 
-
+void SDIO_IRQHandler(void)
+{
+	SD_ProcessIRQSrc();
+}
 
 
 

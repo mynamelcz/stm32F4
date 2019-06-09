@@ -71,7 +71,7 @@ static void sdio_init_dma_fifo(void)
 /*
 **1. 使用 LL_DMA_MODE_PFCTRL  bufferSize即数据长度无需设置。
 */
-static void sdio_dma_init(u32 *src_addr, u32 bufferSize, u32 direction)
+void sdio_dma_init(u32 *src_addr, u32 bufferSize, u32 direction)
 {
     /* UART  TX   DMA  configuration   */
 	LL_AHB1_GRP1_EnableClock(SDIO_DMA_DMA_CLK);
@@ -103,11 +103,36 @@ static void sdio_dma_init(u32 *src_addr, u32 bufferSize, u32 direction)
 #else
 	LL_DMA_DisableFifoMode(SDIO_DMA_NUM, SDIO_DMA_STRAM);	
 #endif	
+
 	LL_DMA_EnableStream(SDIO_DMA_NUM, SDIO_DMA_STRAM);
 	while(LL_DMA_IsEnabledStream(SDIO_DMA_NUM, SDIO_DMA_STRAM) != ENABLE){;}
     /*************          END        **************/
 }	
 
+
+void sdio_dma_send(u32 *src_addr, u32 bufferSize)
+{
+	LL_DMA_DisableIT_TC(SDIO_DMA_NUM, SDIO_DMA_STRAM);
+	
+	sdio_dma_init(src_addr, bufferSize, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
+	
+	LL_DMA_ClearFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM);
+	LL_DMA_EnableIT_TC(SDIO_DMA_NUM, SDIO_DMA_STRAM);	
+	
+
+}
+
+void sdio_dma_receive(u32 *src_addr, u32 bufferSize)
+{
+	LL_DMA_DisableIT_TC(SDIO_DMA_NUM, SDIO_DMA_STRAM);
+	
+	sdio_dma_init(src_addr, bufferSize, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+	
+	LL_DMA_ClearFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM);
+	LL_DMA_EnableIT_TC(SDIO_DMA_NUM, SDIO_DMA_STRAM);	
+	
+
+}
 
 
 
@@ -118,21 +143,21 @@ static void sdio_intterrupt_init(void)
 	NVIC_SetPriority(SDIO_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 0));
 	NVIC_EnableIRQ(SDIO_IRQn);
 	
-	/* DMA  INT	configuration   */
-	LL_DMA_ClearFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM);
-	LL_DMA_EnableIT_TC(SDIO_DMA_NUM, SDIO_DMA_STRAM);	
-	NVIC_SetPriority(SDIO_DMA_STRAM, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 1));
-	NVIC_EnableIRQ(SDIO_DMA_STRAM);	
-
+	NVIC_SetPriority(SDIO_DMA_INT, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 1));
+	NVIC_EnableIRQ(SDIO_DMA_INT);	
 
 }
 
 static void sdio_init(void)
 {
 	sdio_intterrupt_init();
+
 	sdio_gpio_init();
+
 	sdio_reg_init();
+
 	sdio_init_dma_fifo();
+
 }
 
 
@@ -145,7 +170,6 @@ static void sdio_init(void)
 
 void SD_ProcessDMAIRQ(void)
 {
-	
 	if(LL_DMA_IsActiveFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM)){
 		LL_DMA_ClearFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM);
 	}
