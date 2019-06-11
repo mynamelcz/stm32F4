@@ -378,16 +378,12 @@ SD_Error SD_WaitReadOperation(void)
 
   timeout = SD_DATATIMEOUT;
   
-//  while ((DMAEndOfTransfer == 0x00) && (TransferISEnd == 0) && (TransferError == SD_OK) && (timeout > 0))
-//  {
-//	  sd_printf("timeout:%d  line:%d\n",timeout, __LINE__);
-//      timeout--;
-//  }
-  while ((DMAEndOfTransfer == 0x00)  && (TransferError == SD_OK) && (timeout > 0))
+  while ((DMAEndOfTransfer == 0x00) && (TransferISEnd == 0) && (TransferError == SD_OK) && (timeout > 0))
   {
 	  sd_printf("timeout:%d  line:%d\n",timeout, __LINE__);
       timeout--;
-  } 
+  }
+
 
 
 
@@ -500,9 +496,8 @@ SD_Error sd_read_blocks(u8 *readbuff, u32 start_blk, u16 block_num)
     block_addr *= 512;
   }
 
-  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR);
-  SD_LowLevel_DMA_RxConfig((u32 *)readbuff, (BlockSize * block_num)/4);  
-  __SDIO_DMA_ENABLE(SDIO);
+ // __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR);
+
   /* Set Block Size for Card */ 
   sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)BlockSize, SDIO_RESPONSE_SHORT);
   errorstatus = CmdResp1Error(SD_CMD_SET_BLOCKLEN);
@@ -511,7 +506,9 @@ SD_Error sd_read_blocks(u8 *readbuff, u32 start_blk, u16 block_num)
     return(errorstatus);
   }	
   /* Configure the SD DPSM (Data Path State Machine) */
-  sdio_data_cfg(BlockSize * block_num, SDIO_TRANSFER_DIR_TO_SDIO, SDIO_DATABLOCK_SIZE_512B);	
+  sdio_data_cfg(BlockSize * block_num, SDIO_TRANSFER_DIR_TO_SDIO, SDIO_DATABLOCK_SIZE_512B);
+
+  
   if(block_num>1){
 	StopCondition = 1;
 	sdio_send_cmd(SD_CMD_READ_MULT_BLOCK, (u32)block_addr, SDIO_RESPONSE_SHORT); 
@@ -526,12 +523,28 @@ SD_Error sd_read_blocks(u8 *readbuff, u32 start_blk, u16 block_num)
     return(errorstatus);
   }	
   
-  
+//   SD_LowLevel_DMA_RxConfig((u32 *)readbuff, (BlockSize * block_num)/4);  
+//  __SDIO_DMA_ENABLE(SDIO); 
 
-  errorstatus = SD_WaitReadOperation();
-  if(errorstatus !=SD_OK){
-	 ERR_printf(errorstatus);
+  u32 *p_buf = (u32 *)readbuff;
+  u8 i = 0;
+  u16 n = 0;
+
+  while(!(SDIO->STA & SDIO_FLAG_DATAEND)){
+	if(SDIO->STA & SDIO_FLAG_RXFIFOHF){
+		for(i = 0; i<8; i++){
+			*(p_buf + i) = SDIO_ReadData();
+			n++;
+		}
+		p_buf+=8;
+	}
   }
+  sd_printf("N:%d\n",n);
+    SDIO_ClearFlag(SDIO_STATIC_FLAGS);
+//  errorstatus = SD_WaitReadOperation();
+//  if(errorstatus !=SD_OK){
+//	 ERR_printf(errorstatus);
+//  }
   return(errorstatus);
 }
 
@@ -549,7 +562,7 @@ SD_Error sd_write_blocks(u8 *writebuff, u32 start_blk, u16 block_num)
     block_addr *= 512;
   }
 
-  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR);  
+ // __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR);  
 
   /* Set Block Size for Card */ 
   sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)BlockSize, SDIO_RESPONSE_SHORT);  
@@ -558,8 +571,6 @@ SD_Error sd_write_blocks(u8 *writebuff, u32 start_blk, u16 block_num)
 	ERR_printf(TransferError);
     return(errorstatus);
   }
-
-  
   if(block_num > 1){
       sdio_send_cmd(SD_CMD_WRITE_MULT_BLOCK, (u32)block_addr, SDIO_RESPONSE_SHORT);   
       errorstatus = CmdResp1Error(SD_CMD_WRITE_MULT_BLOCK);
@@ -571,15 +582,38 @@ SD_Error sd_write_blocks(u8 *writebuff, u32 start_blk, u16 block_num)
 	ERR_printf(errorstatus);
     return(errorstatus);
   }
-  __SDIO_DMA_ENABLE(SDIO);
-  SD_LowLevel_DMA_TxConfig((u32 *)writebuff, (BlockSize*block_num)/ 4);
   
+//  __SDIO_DMA_ENABLE(SDIO);
+//  SD_LowLevel_DMA_TxConfig((u32 *)writebuff, (BlockSize*block_num)/ 4);
   sdio_data_cfg(BlockSize * block_num, SDIO_TRANSFER_DIR_TO_CARD, SDIO_DATABLOCK_SIZE_512B);
   
-  errorstatus = SD_WaitWriteOperation();
-  if(errorstatus !=SD_OK){
-	 ERR_printf(errorstatus);
+  
+  
+  u32 *p_buf = (u32 *)block_addr;
+  u8 i = 0;
+  u16 n = 0;
+
+  while(!(SDIO->STA & (SDIO_FLAG_TXUNDERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_DATAEND | SDIO_FLAG_STBITERR))){
+	if(SDIO->STA & SDIO_FLAG_TXFIFOHE){
+		for(i = 0; i<8; i++){
+			SDIO_WriteFIFO(SDIO, p_buf+i);
+			n++;
+		}
+		p_buf+=8;
+
+		sd_printf("N:%d\n",n);
+	}
   }
+  sd_printf("N:%d\n",n);
+  
+  SDIO_ClearFlag(SDIO_STATIC_FLAGS);
+  
+  
+  
+//  errorstatus = SD_WaitWriteOperation();
+//  if(errorstatus !=SD_OK){
+//	 ERR_printf(errorstatus);
+//  }
   return(errorstatus);
 }
 
@@ -606,7 +640,7 @@ SD_Error SD_WaitWriteOperation(void)
   {
 	  
 	  sd_printf("SDIO->STA :0x%x LINE:%d\n",SDIO->STA, __LINE__);
-	  SDIO_WriteFIFO(SDIO, &timeout);
+//	  SDIO_WriteFIFO(SDIO, &timeout);
       timeout--;  
   }
   if (StopCondition == 1){
@@ -684,13 +718,13 @@ SD_Error SD_Init(void)
   
   u16 i=0;
   for(;i<1024;i++){
-	test_buf[i] = 0xbb;
+	test_buf[i] = 0xEE;
   }
     
  //   while(SD_GetTransferState());
- //   sd_write_blocks(test_buf, 0, 1);
-  
- 
+    //sd_write_blocks(test_buf, 0, 2);
+    printf("==============================================\n");
+ //       sd_write_blocks(test_buf, 1, 1);
 //    sd_printf("test_buf addr = %d\n",(u32)test_buf);
 //    if((u32)test_buf&0x3){
 //		 i= (u32)test_buf & 0x3;
