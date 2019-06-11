@@ -83,7 +83,7 @@ void sdio_dma_init(u32 *src_addr, u32 bufferSize, u32 direction)
 	// Set		Direction		
 	LL_DMA_SetDataTransferDirection(SDIO_DMA_NUM, SDIO_DMA_STRAM, direction);
 	// Set 		Priority
-	LL_DMA_SetStreamPriorityLevel(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_PRIORITY_LOW);
+	LL_DMA_SetStreamPriorityLevel(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_PRIORITY_HIGH);
 	// Set 		Mode
 	LL_DMA_SetMode(SDIO_DMA_NUM, SDIO_DMA_STRAM, LL_DMA_MODE_PFCTRL);
     // Set 		Inc Mode
@@ -143,7 +143,7 @@ static void sdio_intterrupt_init(void)
 	NVIC_SetPriority(SDIO_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 0));
 	NVIC_EnableIRQ(SDIO_IRQn);
 	
-	NVIC_SetPriority(SDIO_DMA_INT, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 1));
+	NVIC_SetPriority(SDIO_DMA_INT, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 1));
 	NVIC_EnableIRQ(SDIO_DMA_INT);	
 
 }
@@ -167,10 +167,13 @@ static void sdio_init(void)
 
 
 
-
+extern volatile u32 DMAEndOfTransfer;
 void SD_ProcessDMAIRQ(void)
 {
+	
 	if(LL_DMA_IsActiveFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM)){
+		DMAEndOfTransfer = 0x01;
+		bsp_printf("\n SD DMA--end-\n");
 		LL_DMA_ClearFlag_TCx(SDIO_DMA_NUM, SDIO_DMA_STRAM);
 	}
 } 

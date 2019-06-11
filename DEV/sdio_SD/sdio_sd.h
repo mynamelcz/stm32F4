@@ -290,6 +290,7 @@ typedef struct
 #define SDIO_STD_CAPACITY_SD_CARD_V1_1             ((u32)0x00000000)
 #define SDIO_STD_CAPACITY_SD_CARD_V2_0             ((u32)0x00000001)
 #define SDIO_HIGH_CAPACITY_SD_CARD                 ((u32)0x00000002)
+
 #define SDIO_MULTIMEDIA_CARD                       ((u32)0x00000003)
 #define SDIO_SECURE_DIGITAL_IO_CARD                ((u32)0x00000004)
 #define SDIO_HIGH_SPEED_MULTIMEDIA_CARD            ((u32)0x00000005)
@@ -302,7 +303,7 @@ typedef struct
 
 
 
-
+#define SD_BLOCK_SIZE	512	
 typedef struct
 {
 //	__sdio_ctr_obj  *hd_io;
@@ -337,10 +338,7 @@ SD_Error SD_GetCardInfo(SD_CardInfo *cardinfo);
 SD_Error SD_GetCardStatus(SD_CardStatus *cardstatus);
 SD_Error SD_EnableWideBusOperation(u32 WideMode);
 SD_Error SD_SelectDeselect(u64 addr);
-SD_Error SD_ReadBlock(u8 *readbuff, u64 ReadAddr, u16 BlockSize);
-SD_Error SD_ReadMultiBlocks(u8 *readbuff, u64 ReadAddr, u16 BlockSize, u32 NumberOfBlocks);
-SD_Error SD_WriteBlock(u8 *writebuff, u64 WriteAddr, u16 BlockSize);
-SD_Error SD_WriteMultiBlocks(u8 *writebuff, u64 WriteAddr, u16 BlockSize, u32 NumberOfBlocks);
+
 SDTransferState SD_GetTransferState(void);
 SD_Error SD_StopTransfer(void);
 SD_Error SD_Erase(u64 startaddr, u64 endaddr);

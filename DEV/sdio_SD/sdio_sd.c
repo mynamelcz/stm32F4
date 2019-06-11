@@ -289,7 +289,6 @@ static SD_Error FindSCR(u16 rca, u32 *pscr)
     return(errorstatus);
   }
 
- 
   sdio_data_cfg(8, SDIO_TRANSFER_DIR_TO_SDIO, SDIO_DATABLOCK_SIZE_8B);
 
   /*!< Send ACMD51 SD_APP_SEND_SCR with argument as 0 */
@@ -309,12 +308,13 @@ static SD_Error FindSCR(u16 rca, u32 *pscr)
 		*(tempscr + index) = SDIO_ReadData();
     }
   }
-  /****************  ADD BY LCZ ***********/
-   while((SDIO->STA & SDIO_FLAG_RXACT)){
-	   sd_printf("SDIO_ReadData:%d  ,LINE:%d \n", SDIO_ReadData(), __LINE__);
-   }
-  /***************************************/
-
+  
+  if(((SDIO->STA & SDIO_FLAG_RXACT)))
+  {
+	 sd_printf("SDIO_ReadData:0x%x  ,LINE:%d \n", SDIO_ReadData(), __LINE__); 
+  }  
+  
+  
   
   if (SDIO_GetFlagStatus(SDIO_FLAG_DTIMEOUT) != RESET){
     SDIO_ClearFlag(SDIO_FLAG_DTIMEOUT);
@@ -353,116 +353,15 @@ static SD_Error FindSCR(u16 rca, u32 *pscr)
 
 
 
-SD_Error SD_ReadBlock(u8 *readbuff, uint64_t ReadAddr, u16 BlockSize)
-{
-  SD_Error errorstatus = SD_OK;
-#if defined (SD_POLLING_MODE) 
-  u32 count = 0, *tempbuff = (u32 *)readbuff;
-#endif
-
-  TransferError = SD_OK;
-  TransferISEnd = 0;
-  StopCondition = 0;
-
-  SDIO->DCTRL = 0x0;
-
-#if defined (SD_DMA_MODE)
-  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR);
-  __SDIO_DMA_ENABLE(SDIO);
-  SD_LowLevel_DMA_RxConfig((u32 *)readbuff, BlockSize);
-#endif
-
-  if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
-  {
-    BlockSize = 512;
-    ReadAddr /= 512;
-  }
-
-
-  
-  /* Set Block Size for Card */ 
-  sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)BlockSize, SDIO_RESPONSE_SHORT);
-  
-  errorstatus = CmdResp1Error(SD_CMD_SET_BLOCKLEN);
-
-  if (SD_OK != errorstatus){
-	ERR_printf(errorstatus);
-    return(errorstatus);
-  }
-  sdio_data_cfg(BlockSize, SDIO_TRANSFER_DIR_TO_SDIO, SDIO_DATABLOCK_SIZE_512B);
-  
-  /*!< Send CMD17 READ_SINGLE_BLOCK */
-  sdio_send_cmd(SD_CMD_READ_SINGLE_BLOCK, (u32)ReadAddr, SDIO_RESPONSE_SHORT);
- 
-  errorstatus = CmdResp1Error(SD_CMD_READ_SINGLE_BLOCK);
-  if (errorstatus != SD_OK){
-	ERR_printf(errorstatus);
-    return(errorstatus);
-  }
-
-////  if(__HAL_SD_GET_FLAG(hsd, SDIO_FLAG_RXFIFOHF))
-////  {
-////	/* Read data from SDIO Rx FIFO */
-////	for(count = 0U; count < 8U; count++)
-////	{
-////	  *(tempbuff + count) = SDIO_ReadFIFO(hsd->Instance);
-////	}
-////	tempbuff += 8U;
-////  }
-
-  return(errorstatus);
-}
-
-
-SD_Error SD_ReadMultiBlocks(u8 *readbuff, uint64_t ReadAddr, u16 BlockSize, u32 NumberOfBlocks)
-{
-  SD_Error errorstatus = SD_OK;
-  TransferError = SD_OK;
-  TransferISEnd = 0;
-  StopCondition = 1;
-	
-  SDIO->DCTRL = 0x0;
 
 
 
-	
-	
-  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR); 
-  __SDIO_DMA_ENABLE(SDIO);
-  SD_LowLevel_DMA_RxConfig((u32 *)readbuff, (NumberOfBlocks * BlockSize));
-  if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
-  {
-    BlockSize = 512;
-    ReadAddr /= 512;
-  }
-  /*!< Set Block Size for Card */
-  sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)BlockSize, SDIO_RESPONSE_SHORT);
-  errorstatus = CmdResp1Error(SD_CMD_SET_BLOCKLEN);
-  if (SD_OK != errorstatus){
-	ERR_printf(errorstatus);
-    return(errorstatus);
-  }
-    
-  sdio_data_cfg(NumberOfBlocks * BlockSize, SDIO_TRANSFER_DIR_TO_SDIO, SDIO_DATABLOCK_SIZE_512B);
-  
-  /*!< Send CMD18 READ_MULT_BLOCK with argument data address */
-  sdio_send_cmd(SD_CMD_READ_MULT_BLOCK, (u32)ReadAddr, SDIO_RESPONSE_SHORT);
-  errorstatus = CmdResp1Error(SD_CMD_READ_MULT_BLOCK);
-  if (errorstatus != SD_OK){
-	ERR_printf(errorstatus);
-    return(errorstatus);
-  }
-  
-  return(errorstatus);
-}
 
 
 
-/**
-  * @brief  Aborts an ongoing data transfer.
-  * @param  None
-  * @retval SD_Error: SD Card Error code.
-  */
+
+
+
 SD_Error SD_StopTransfer(void)
 {
   SD_Error errorstatus = SD_OK;
@@ -472,14 +371,6 @@ SD_Error SD_StopTransfer(void)
   return(errorstatus);
 }
 
-/**
-  * @brief  This function waits until the SDIO DMA data transfer is finished. 
-  *         This function should be called after SDIO_ReadMultiBlocks() function
-  *         to insure that all data sent by the card are already transferred by 
-  *         the DMA controller.
-  * @param  None.
-  * @retval SD_Error: SD Card Error code.
-  */
 SD_Error SD_WaitReadOperation(void)
 {
   SD_Error errorstatus = SD_OK;
@@ -487,31 +378,36 @@ SD_Error SD_WaitReadOperation(void)
 
   timeout = SD_DATATIMEOUT;
   
-  while ((DMAEndOfTransfer == 0x00) && (TransferISEnd == 0) && (TransferError == SD_OK) && (timeout > 0))
+//  while ((DMAEndOfTransfer == 0x00) && (TransferISEnd == 0) && (TransferError == SD_OK) && (timeout > 0))
+//  {
+//	  sd_printf("timeout:%d  line:%d\n",timeout, __LINE__);
+//      timeout--;
+//  }
+  while ((DMAEndOfTransfer == 0x00)  && (TransferError == SD_OK) && (timeout > 0))
   {
 	  sd_printf("timeout:%d  line:%d\n",timeout, __LINE__);
       timeout--;
-  }
-  
+  } 
+
+
+
   DMAEndOfTransfer = 0x00;
   timeout = SD_DATATIMEOUT;
   while(((SDIO->STA & SDIO_FLAG_RXACT)) && (timeout > 0))
   {
-	sd_printf("timeout:%d  line:%d\n",timeout, __LINE__);
-	 sd_printf("SDIO_ReadData:%d  ,LINE:%d \n", SDIO_ReadData(), __LINE__);
-	 
+    sd_printf("SDIO_ReadData:0x%x  ,LINE:%d \n", SDIO_ReadData(), __LINE__);
     timeout--;  
   }
-
+  
+  
+  
   if (StopCondition == 1){
     errorstatus = SD_StopTransfer();
     StopCondition = 0;
   }
-  
   if ((timeout == 0) && (errorstatus == SD_OK)){
     errorstatus = SD_DATA_TIMEOUT;
-  }
-  
+  } 
   /*!< Clear all the static flags */
   SDIO_ClearFlag(SDIO_STATIC_FLAGS);
 
@@ -523,12 +419,7 @@ SD_Error SD_WaitReadOperation(void)
   }
 }
 
-/**
-  * @brief  Returns the current card's status.
-  * @param  pcardstatus: pointer to the buffer that will contain the SD card 
-  *         status (Card Status register).
-  * @retval SD_Error: SD Card Error code.
-  */
+
 SD_Error SD_SendStatus(u32 *pcardstatus)
 {
   SD_Error errorstatus = SD_OK;
@@ -560,11 +451,7 @@ u8 SD_Detect(void)
 //  }
   return status;
 }
-/**
-  * @brief  Returns the current card's state.
-  * @param  None
-  * @retval SDCardState: SD Card Error or SD Card Current State.
-  */
+
 SDCardState SD_GetState(void)
 {
   uint32_t resp1 = 0;
@@ -597,169 +484,108 @@ SDTransferState SD_GetStatus(void)
   }
 }
 
-SD_Error sdio_read_blocks(u8 *readbuff, uint64_t ReadAddr, u16 BlockSize, u32 NumberOfBlocks)
-{
-	uint32_t timeout;
-	SD_Error Status;
-	timeout = SD_DATATIMEOUT;
-	if(NumberOfBlocks==0)return SD_OK;
-	if(NumberOfBlocks == 1){
-		Status = SD_ReadBlock(readbuff, ReadAddr, BlockSize);
-	}else{
-		Status = SD_ReadMultiBlocks(readbuff, ReadAddr, BlockSize, NumberOfBlocks);
-	}
-	
-	
-
-	if(Status == SD_OK){
-		Status = SD_WaitReadOperation();
-		if(Status == SD_OK){
-			while((SD_GetStatus() != SD_TRANSFER_OK)&&(--timeout));
-			if(timeout){
-				return SD_OK;
-			}
-		}		
-	}
-	ERR_printf(Status);
-	return Status;
-}
-
-
-SD_Error SD_WriteBlock(u8 *writebuff, uint64_t WriteAddr, u16 BlockSize)
+SD_Error sd_read_blocks(u8 *readbuff, u32 start_blk, u16 block_num)
 {
   SD_Error errorstatus = SD_OK;
-
-#if defined (SD_POLLING_MODE)
-  u32 bytestransferred = 0, count = 0, restwords = 0;
-  u32 *tempbuff = (u32 *)writebuff;
-#endif
-
+  u32 BlockSize = SD_BLOCK_SIZE;
+  u32 block_addr = start_blk;
+	
   TransferError = SD_OK;
   TransferISEnd = 0;
-  StopCondition = 0;
 
+  /* Initialize data control register */
   SDIO->DCTRL = 0x0;
 
-#if defined (SD_DMA_MODE)
-  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR); 
- SD_LowLevel_DMA_TxConfig((u32 *)writebuff, BlockSize);
-  __SDIO_DMA_ENABLE(SDIO);
-#endif
-
-  if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
-  {
-    BlockSize = 512;
-    WriteAddr /= 512;
+  if (CardType != SDIO_HIGH_CAPACITY_SD_CARD){
+    block_addr *= 512;
   }
+
+  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR);
+  SD_LowLevel_DMA_RxConfig((u32 *)readbuff, (BlockSize * block_num)/4);  
+  __SDIO_DMA_ENABLE(SDIO);
+  /* Set Block Size for Card */ 
+  sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)BlockSize, SDIO_RESPONSE_SHORT);
+  errorstatus = CmdResp1Error(SD_CMD_SET_BLOCKLEN);
+  if (SD_OK != errorstatus){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }	
+  /* Configure the SD DPSM (Data Path State Machine) */
+  sdio_data_cfg(BlockSize * block_num, SDIO_TRANSFER_DIR_TO_SDIO, SDIO_DATABLOCK_SIZE_512B);	
+  if(block_num>1){
+	StopCondition = 1;
+	sdio_send_cmd(SD_CMD_READ_MULT_BLOCK, (u32)block_addr, SDIO_RESPONSE_SHORT); 
+	errorstatus = CmdResp1Error(SD_CMD_READ_MULT_BLOCK);
+  }else{
+	StopCondition = 0;
+	sdio_send_cmd(SD_CMD_READ_SINGLE_BLOCK, (u32)block_addr, SDIO_RESPONSE_SHORT);
+	errorstatus = CmdResp1Error(SD_CMD_READ_SINGLE_BLOCK);
+  } 
+  if (errorstatus != SD_OK){
+	ERR_printf(errorstatus);
+    return(errorstatus);
+  }	
+  
+  
+
+  errorstatus = SD_WaitReadOperation();
+  if(errorstatus !=SD_OK){
+	 ERR_printf(errorstatus);
+  }
+  return(errorstatus);
+}
+
+SD_Error sd_write_blocks(u8 *writebuff, u32 start_blk, u16 block_num)
+{
+  SD_Error errorstatus = SD_OK;
+  u32 BlockSize = SD_BLOCK_SIZE;
+  u32 block_addr = start_blk;	
+	
+  TransferError = SD_OK;
+  TransferISEnd = 0;
+	
+  SDIO->DCTRL = 0x0;
+  if (CardType != SDIO_HIGH_CAPACITY_SD_CARD){
+    block_addr *= 512;
+  }
+
+  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR);  
 
   /* Set Block Size for Card */ 
   sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)BlockSize, SDIO_RESPONSE_SHORT);  
-  
   errorstatus = CmdResp1Error(SD_CMD_SET_BLOCKLEN);
   if (SD_OK != errorstatus){
 	ERR_printf(TransferError);
     return(errorstatus);
   }
 
-  /*!< Send CMD24 WRITE_SINGLE_BLOCK */
-  sdio_send_cmd(SD_CMD_WRITE_SINGLE_BLOCK, (u32)WriteAddr, SDIO_RESPONSE_SHORT);  
   
-  errorstatus = CmdResp1Error(SD_CMD_WRITE_SINGLE_BLOCK);
+  if(block_num > 1){
+      sdio_send_cmd(SD_CMD_WRITE_MULT_BLOCK, (u32)block_addr, SDIO_RESPONSE_SHORT);   
+      errorstatus = CmdResp1Error(SD_CMD_WRITE_MULT_BLOCK);
+  }else{
+	  sdio_send_cmd(SD_CMD_WRITE_SINGLE_BLOCK, (u32)block_addr, SDIO_RESPONSE_SHORT);  
+	  errorstatus = CmdResp1Error(SD_CMD_WRITE_SINGLE_BLOCK);  
+  }
   if (errorstatus != SD_OK){
-	ERR_printf(TransferError);
+	ERR_printf(errorstatus);
     return(errorstatus);
   }
-
-  sdio_data_cfg(BlockSize, SDIO_TRANSFER_DIR_TO_CARD, SDIO_DATABLOCK_SIZE_512B);
-  
-  
-
-  
-  return(errorstatus);
-}
-
-/**
-  * @brief  Allows to write blocks starting from a specified address in a card.
-  *         The Data transfer can be managed by DMA mode only. 
-  * @note   This operation should be followed by two functions to check if the 
-  *         DMA Controller and SD Card status.
-  *          - SD_ReadWaitOperation(): this function insure that the DMA
-  *            controller has finished all data transfer.
-  *          - SD_GetStatus(): to check that the SD Card has finished the 
-  *            data transfer and it is ready for data.     
-  * @param  WriteAddr: Address from where data are to be read.
-  * @param  writebuff: pointer to the buffer that contain the data to be transferred.
-  * @param  BlockSize: the SD card Data block size. The Block size should be 512.
-  * @param  NumberOfBlocks: number of blocks to be written.
-  * @retval SD_Error: SD Card Error code.
-  */
-SD_Error SD_WriteMultiBlocks(u8 *writebuff, uint64_t WriteAddr, u16 BlockSize, u32 NumberOfBlocks)
-{
-  SD_Error errorstatus = SD_OK;
-
-  TransferError = SD_OK;
-  TransferISEnd = 0;
-  StopCondition = 1;
-  SDIO->DCTRL = 0x0;
-
-  __SDIO_ENABLE_IT(SDIO,SDIO_IT_DCRCFAIL | SDIO_IT_DTIMEOUT | SDIO_IT_DATAEND | SDIO_IT_RXOVERR | SDIO_IT_STBITERR); 
-  SD_LowLevel_DMA_TxConfig((u32 *)writebuff, (NumberOfBlocks * BlockSize));
   __SDIO_DMA_ENABLE(SDIO);
-  if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
-  {
-    BlockSize = 512;
-    WriteAddr /= 512;
+  SD_LowLevel_DMA_TxConfig((u32 *)writebuff, (BlockSize*block_num)/ 4);
+  
+  sdio_data_cfg(BlockSize * block_num, SDIO_TRANSFER_DIR_TO_CARD, SDIO_DATABLOCK_SIZE_512B);
+  
+  errorstatus = SD_WaitWriteOperation();
+  if(errorstatus !=SD_OK){
+	 ERR_printf(errorstatus);
   }
-
-  /* Set Block Size for Card */ 
-  sdio_send_cmd(SD_CMD_SET_BLOCKLEN, (u32)BlockSize, SDIO_RESPONSE_SHORT);   
-  
-  errorstatus = CmdResp1Error(SD_CMD_SET_BLOCKLEN);
-  if (SD_OK != errorstatus){
-	ERR_printf(TransferError);
-    return(errorstatus);
-  }
-  
-  /*!< To improve performance */
-  sdio_send_cmd(SD_CMD_APP_CMD, (u32) (RCA << 16), SDIO_RESPONSE_SHORT);   
-  
-  errorstatus = CmdResp1Error(SD_CMD_APP_CMD);
-  if (errorstatus != SD_OK){
-	ERR_printf(TransferError);
-    return(errorstatus);
-  }
-  /*!< To improve performance */
-  sdio_send_cmd(SD_CMD_SET_BLOCK_COUNT, (u32) NumberOfBlocks, SDIO_RESPONSE_SHORT);    
-  
-  errorstatus = CmdResp1Error(SD_CMD_SET_BLOCK_COUNT);
-  if (errorstatus != SD_OK){
-	ERR_printf(TransferError);
-    return(errorstatus);
-  }
-
-
-  /*!< Send CMD25 WRITE_MULT_BLOCK with argument data address */
-  sdio_send_cmd(SD_CMD_WRITE_MULT_BLOCK, (u32)WriteAddr, SDIO_RESPONSE_SHORT);   
-  
-  errorstatus = CmdResp1Error(SD_CMD_WRITE_MULT_BLOCK);
-  if (SD_OK != errorstatus){
-	ERR_printf(TransferError);
-    return(errorstatus);
-  }
-
-  sdio_data_cfg(NumberOfBlocks * BlockSize, SDIO_TRANSFER_DIR_TO_CARD, SDIO_DATABLOCK_SIZE_512B);
-  
   return(errorstatus);
 }
 
-/**
-  * @brief  This function waits until the SDIO DMA data transfer is finished. 
-  *         This function should be called after SDIO_WriteBlock() and
-  *         SDIO_WriteMultiBlocks() function to insure that all data sent by the 
-  *         card are already transferred by the DMA controller.        
-  * @param  None.
-  * @retval SD_Error: SD Card Error code.
-  */
+
+
+
 SD_Error SD_WaitWriteOperation(void)
 {
   SD_Error errorstatus = SD_OK;
@@ -772,10 +598,10 @@ SD_Error SD_WaitWriteOperation(void)
     timeout--;
   }
   
-  DMAEndOfTransfer = 0x00;
-
-  timeout = SD_DATATIMEOUT;
+    __SDIO_DMA_DISABLE(SDIO);
   
+  DMAEndOfTransfer = 0x00;
+  timeout = SD_DATATIMEOUT;
   while(((SDIO->STA & SDIO_FLAG_TXACT)) && (timeout > 0))
   {
 	  
@@ -783,43 +609,31 @@ SD_Error SD_WaitWriteOperation(void)
 	  SDIO_WriteFIFO(SDIO, &timeout);
       timeout--;  
   }
-
-  if (StopCondition == 1)
-  {
+  if (StopCondition == 1){
     errorstatus = SD_StopTransfer();
     StopCondition = 0;
   }
-  
-  if ((timeout == 0) && (errorstatus == SD_OK))
-  {
+  if ((timeout == 0) && (errorstatus == SD_OK)){
     errorstatus = SD_DATA_TIMEOUT;
   }
-  
   /*!< Clear all the static flags */
   SDIO_ClearFlag(SDIO_STATIC_FLAGS);
   
-  if (TransferError != SD_OK)
-  {
+  if (TransferError != SD_OK){
+	ERR_printf(errorstatus);
     return(TransferError);
   }
-  else
-  {
+  else{
     return(errorstatus);
   }
 }
 
-/**
-  * @brief  Gets the cuurent data transfer state.
-  * @param  None
-  * @retval SDTransferState: Data Transfer state.
-  *   This value can be: 
-  *        - SD_TRANSFER_OK: No data transfer is acting
-  *        - SD_TRANSFER_BUSY: Data transfer is acting
-  */
+
 SDTransferState SD_GetTransferState(void)
 {
   if (SDIO->STA & (SDIO_FLAG_TXACT | SDIO_FLAG_RXACT))
   {
+	  sd_printf("SD_TRANSFER_BUSY\n");
     return(SD_TRANSFER_BUSY);
   }
   else
@@ -872,11 +686,22 @@ SD_Error SD_Init(void)
   for(;i<1024;i++){
 	test_buf[i] = 0xbb;
   }
+    
+ //   while(SD_GetTransferState());
+ //   sd_write_blocks(test_buf, 0, 1);
   
-    sdio_read_blocks(test_buf, 0, 512, 1);
-    sd_puthex((const char *)test_buf, 512);
+ 
+//    sd_printf("test_buf addr = %d\n",(u32)test_buf);
+//    if((u32)test_buf&0x3){
+//		 i= (u32)test_buf & 0x3;
+//		sd_printf("test_buf i = %d\n",(u32)i);
+//	}
+  
+    sd_read_blocks(test_buf, 0, 1);
+    sd_puthex((const char *)test_buf, 512*2);
 
-//     SD_WriteBlock(test_buf, 512, 512);
+//	sd_write_blocks(test_buf, 1, 1);
+     
 //   SD_WaitWriteOperation();
 //      sdio_read_blocks(test_buf, 512, 512, 1);
 //    sd_puthex((const char *)test_buf, 512);
