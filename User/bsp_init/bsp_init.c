@@ -11,6 +11,10 @@
 #include "sdio_sd.h"
 
 
+extern SD_HandleTypeDef hsd;
+extern DMA_HandleTypeDef hdma_sdio_rx;
+extern DMA_HandleTypeDef hdma_sdio_tx;
+
 
 
 static void gpio_clk_enable(void);
@@ -98,8 +102,9 @@ static void spi_sd_cs_ctr(u8 en)
 static void sdio_sd_bsp_init(void)
 {
 	u8 res = 0;
-    sdio_ctr_obj.init();
-	sdio_sd_obj.init();
+//    sdio_ctr_obj.init();
+	BSP_SD_Init(&hsd);
+
 }
 
 

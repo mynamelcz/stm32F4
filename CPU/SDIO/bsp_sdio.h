@@ -1,7 +1,7 @@
 #ifndef __BSP_SDIO_H
 #define __BSP_SDIO_H
 #include "includes.h"
-
+#include "sdio_sd.h"
 
 
 #define SDIO_DMA_NUM			DMA2
@@ -22,7 +22,7 @@
 
 
 typedef struct{
-	void (*init)(void);
+	void (*init)(SD_HandleTypeDef *hsd);
 
 }__sdio_ctr_obj;
 

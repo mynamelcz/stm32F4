@@ -34,11 +34,16 @@
 #include "spi_flash.h"
 #include "vfile_sys.h"
 
+#include "sdio_sd.h"
 
+
+SD_HandleTypeDef hsd;
+DMA_HandleTypeDef hdma_sdio_rx;
+DMA_HandleTypeDef hdma_sdio_tx;
 
 void SystemClock_Config(void);
 void gpio_clk_enable(void);
-
+static void MX_DMA_Init(void);
 
 
 
@@ -52,10 +57,7 @@ int main(void)
 
     HAL_Init();
     SystemClock_Config();  
-	
-
-
-	
+	MX_DMA_Init();
     bsp_init();
   
 
@@ -150,7 +152,23 @@ void SystemClock_Config(void)
 }
 
 
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
 
+  /* DMA interrupt init */
+  /* DMA2_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+  /* DMA2_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
+
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

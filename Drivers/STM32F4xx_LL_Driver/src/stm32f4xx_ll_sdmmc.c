@@ -158,6 +158,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
+#include "stm32f4xx_ll_sdmmc.h"
+
+
+ 
 
 /** @addtogroup STM32F4xx_HAL_Driver
   * @{
@@ -168,7 +172,7 @@
   * @{
   */
 
-#if defined(HAL_SD_MODULE_ENABLED) || defined(HAL_MMC_MODULE_ENABLED)
+
 #if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx) || defined(STM32F417xx) || \
     defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) || \
     defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F411xE) || defined(STM32F446xx) || \
@@ -1478,7 +1482,6 @@ static uint32_t SDMMC_GetCmdResp7(SDIO_TypeDef *SDIOx)
 #endif /* STM32F405xx || STM32F415xx || STM32F407xx || STM32F417xx || STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx ||
           STM32F401xC || STM32F401xE || STM32F411xE || STM32F446xx || STM32F469xx || STM32F479xx || STM32F412Zx || STM32F412Vx ||
           STM32F412Rx || STM32F412Cx || STM32F413xx || STM32F423xx */
-#endif /* (HAL_SD_MODULE_ENABLED) || (HAL_MMC_MODULE_ENABLED) */
 
 /**
   * @}

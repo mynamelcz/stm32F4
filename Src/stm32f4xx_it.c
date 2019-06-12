@@ -199,19 +199,36 @@ void DebugMon_Handler(void)
 
 
 
+#include "sdio_sd.h"
+
+extern DMA_HandleTypeDef hdma_sdio_rx;
+extern DMA_HandleTypeDef hdma_sdio_tx;
+extern SD_HandleTypeDef hsd;
 
 
+void SDIO_IRQHandler(void)
+{
 
-/**
-  * @brief This function handles DMA2 stream7 global interrupt.
-  */
+  HAL_SD_IRQHandler(&hsd);
 
-extern void SD_ProcessDMAIRQ(void);
+}
+
 
 void DMA2_Stream3_IRQHandler(void)
-{	
-	SD_ProcessDMAIRQ();
-}	
+{
+
+  HAL_DMA_IRQHandler(&hdma_sdio_rx);
+
+}
+
+
+void DMA2_Stream6_IRQHandler(void)
+{
+
+  HAL_DMA_IRQHandler(&hdma_sdio_tx);
+
+}
+
 
 void DMA2_Stream7_IRQHandler(void)
 {	
