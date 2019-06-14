@@ -1,4 +1,5 @@
 #include "bsp_spi.h"
+#include "soft_spi.h"
 #include "stm32f4xx_ll.h"
 
 #define SPI_TIME_OUT_CNT	1000
@@ -108,6 +109,9 @@ static void spi2_init(void(*cs_fun)(u8))
   LL_SPI_Enable(SPI2);
 
 }
+
+
+
 
 
 static bool spi1_ioctr(u8 cmd, void *buf)
@@ -242,8 +246,88 @@ static void spi2_read_buf(uint8_t *pData, uint32_t Size)
 	}
 }
 
+////////////////////////////////////////////////
+Soft_SPI_hd soft_spi_hd;
+#define SOFT_SPI_PORT		GPIOB
+#define SOFT_SPI_PIN_CS		LL_GPIO_PIN_12
+#define SOFT_SPI_PIN_CLK	LL_GPIO_PIN_13
+#define SOFT_SPI_PIN_MISO	LL_GPIO_PIN_14
+#define SOFT_SPI_PIN_MOSI	LL_GPIO_PIN_15
 
 
+
+//#define SOFT_SPI_PORT		GPIOB
+//#define SOFT_SPI_PIN_CS		LL_GPIO_PIN_0
+//#define SOFT_SPI_PIN_CLK	LL_GPIO_PIN_3
+//#define SOFT_SPI_PIN_MISO	LL_GPIO_PIN_4
+//#define SOFT_SPI_PIN_MOSI	LL_GPIO_PIN_5
+static void soft_spi_cs(u8 en)
+{
+	en?LL_GPIO_SetOutputPin(SOFT_SPI_PORT, SOFT_SPI_PIN_CS):\
+	   LL_GPIO_ResetOutputPin(SOFT_SPI_PORT, SOFT_SPI_PIN_CS);	
+}
+static u8 soft_spi_miso(void)
+{
+	return LL_GPIO_IsInputPinSet(SOFT_SPI_PORT, SOFT_SPI_PIN_MISO);
+}
+static void soft_spi_mosi(u8 en)
+{
+	en?LL_GPIO_SetOutputPin(SOFT_SPI_PORT, SOFT_SPI_PIN_MOSI):\
+	   LL_GPIO_ResetOutputPin(SOFT_SPI_PORT, SOFT_SPI_PIN_MOSI);
+}
+static void soft_spi_clk(u8 en)
+{
+	en?LL_GPIO_SetOutputPin(SOFT_SPI_PORT, SOFT_SPI_PIN_CLK):\
+	   LL_GPIO_ResetOutputPin(SOFT_SPI_PORT, SOFT_SPI_PIN_CLK);
+}
+static bool soft_spi_ioctr(u8 cmd, void *buf)
+{
+	u8 res = false;
+	return true;
+}
+static void soft_spi_init(void(*cs_fun)(u8))
+{
+	(void)(cs_fun);
+	soft_spi_hd.type = CPOL0_CPHA0;
+	
+	soft_spi_hd.CLK = soft_spi_clk;
+	soft_spi_hd.MISO= soft_spi_miso;
+	soft_spi_hd.MOSI= soft_spi_mosi;
+	LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = 	SOFT_SPI_PIN_CS | 
+							SOFT_SPI_PIN_CLK |
+							SOFT_SPI_PIN_MOSI;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
+	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+	LL_GPIO_Init(SOFT_SPI_PORT, &GPIO_InitStruct);	
+
+	GPIO_InitStruct.Pin = 	SOFT_SPI_PIN_MISO;
+	GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
+	GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
+	GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+	LL_GPIO_Init(SOFT_SPI_PORT, &GPIO_InitStruct);		
+
+}
+u8 spi_tx_rx_byte(Soft_SPI_hd *hd, u8 s_dat);
+void spi_send_buf(Soft_SPI_hd *hd, const u8 *buf, u32 len);
+void spi_read_buf(Soft_SPI_hd *hd, u8 *buf, u32 len);
+
+
+static void soft_spi_send(const u8 *pData, uint32_t Size)
+{
+	spi_send_buf(&soft_spi_hd, pData, Size);
+}
+static void soft_spi_read(u8 *pData, uint32_t Size)
+{
+	spi_read_buf(&soft_spi_hd, pData, Size);
+}	
+static u8 soft_spi_send_read_byte(u8 dat)
+{
+	return spi_tx_rx_byte(&soft_spi_hd, dat);
+}
 
 __spi_ctr_obj spi1_obj = {
 	.cs_str = NULL,
@@ -263,4 +347,11 @@ __spi_ctr_obj spi2_obj = {
 	.io_ctr = spi2_ioctr,
 };
 
-
+__spi_ctr_obj soft_spi_obj = {
+	.cs_str = soft_spi_cs,
+	.init 	= soft_spi_init,
+	.read   = soft_spi_read,
+	.write  = soft_spi_send,
+	.w_r_byte = soft_spi_send_read_byte,
+	.io_ctr = soft_spi_ioctr,
+};

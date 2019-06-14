@@ -121,6 +121,7 @@ static u8 sd_cmd_r1(u8 Cmd, u32 Arg, u8 Crc)
 	sd_puthex((const char *)cmd_fream,6);
 	
 	retry = 100; 
+
 	this_obj->hd_io->write(cmd_fream, 6);
 	do
 	{	
@@ -460,7 +461,7 @@ spi_sd_err sd_getcard_inf(__sd_inf_t *sd_inf)
 static spi_sd_err sd_idle_mode(void)
 {
 	u8 tmp_buf[10];
-	u8 retry = 10;
+	u8 retry = 0xff;
 	u8 r1 = 0xff;
 	//0: Reset card  >74  clk **/
 	sd_speed_set(SD_CLK_SPEED_LOW);

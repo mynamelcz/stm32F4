@@ -40,8 +40,8 @@ void bsp_init(void)
     uart1_init(); 
 	
 	flash_bsp_init();
-	//spi_sd_bsp_init();
-	sdio_sd_bsp_init();
+	spi_sd_bsp_init();
+	//sdio_sd_bsp_init();
 }
 
 
@@ -51,6 +51,10 @@ static void flash_bsp_init(void)
 	flash_cs_gpio_init();
     spi1_obj.init(flash_cs_ctr);
 	spi_flash_obj.init(&spi1_obj);
+
+//	flash_cs_gpio_init();
+//    soft_spi_obj.init(flash_cs_ctr);
+//	spi_flash_obj.init(&soft_spi_obj);
 }
 
 static void flash_cs_gpio_init(void)
@@ -73,12 +77,24 @@ static void flash_cs_ctr(u8 en)
 static void spi_sd_bsp_init(void)
 {
 	u8 res = 0;
+//	spi_sd_cs_gpio_init();
+//    spi2_obj.init(spi_sd_cs_ctr);
+//	res = spi_sd_obj.init(&spi2_obj);
+//	if(res){
+//		bsp_printf("[ERR] spi_sd_bsp_init err\n");
+//	}
+	
 	spi_sd_cs_gpio_init();
-    spi2_obj.init(spi_sd_cs_ctr);
-	res = spi_sd_obj.init(&spi2_obj);
+    soft_spi_obj.init(spi_sd_cs_ctr);
+	res = spi_sd_obj.init(&soft_spi_obj);
 	if(res){
 		bsp_printf("[ERR] spi_sd_bsp_init err\n");
-	}
+	}	
+	
+	
+	
+
+
 }
 
 static void spi_sd_cs_gpio_init(void)
@@ -103,7 +119,7 @@ static void sdio_sd_bsp_init(void)
 {
 	u8 res = 0;
 //    sdio_ctr_obj.init();
-	BSP_SD_Init(&hsd);
+//BSP_SD_Init(&hsd);
 
 }
 
