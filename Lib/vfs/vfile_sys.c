@@ -122,7 +122,9 @@ static u32 my_scan_file(const char* path)
 {
 	u32 res = 0;
 	char pbuf[255];
-	my_memcpy(pbuf, path, strlen(path));
+	u16 len = strlen(path);
+	my_memcpy(pbuf, path, len);
+	pbuf[len]  = 0;
 	res = scan_files(pbuf);
 	return (res);
 }

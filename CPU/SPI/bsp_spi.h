@@ -30,7 +30,7 @@ typedef struct{
 
 extern __spi_ctr_obj spi1_obj;
 extern __spi_ctr_obj spi2_obj;
-extern __spi_ctr_obj soft_spi_obj;
+//extern __spi_ctr_obj soft_spi_obj;
  
 #endif
 

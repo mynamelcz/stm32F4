@@ -2,7 +2,7 @@
 
 
 
-volatile u32 delay_cnt_g = 100;
+static volatile u32 delay_cnt_g = 100;
 
 static void soft_spi_delay(u32 delay)
 {
@@ -11,10 +11,7 @@ static void soft_spi_delay(u32 delay)
 	delay_cnt_g = tmp;
 }
 
-
-
-
-u8 spi_tx_rx_byte(Soft_SPI_hd *hd, u8 s_dat)
+static u8 spi_tx_rx_byte(Soft_SPI_hd *hd, u8 s_dat)
 {
 	u8 i = 0;
 	u8 r_dat = 0;
@@ -95,7 +92,7 @@ u8 spi_tx_rx_byte(Soft_SPI_hd *hd, u8 s_dat)
 	return r_dat;
 }
 
-void spi_send_buf(Soft_SPI_hd *hd, const u8 *buf, u32 len)
+static void spi_send_buf(Soft_SPI_hd *hd, const u8 *buf, u32 len)
 {
 	ASSERT(buf);
 	const u8 *ptr = buf;
@@ -104,7 +101,7 @@ void spi_send_buf(Soft_SPI_hd *hd, const u8 *buf, u32 len)
 		spi_tx_rx_byte(hd,*ptr++);
 	}
 }
-void spi_read_buf(Soft_SPI_hd *hd, u8 *buf, u32 len)
+static void spi_read_buf(Soft_SPI_hd *hd, u8 *buf, u32 len)
 {
 	ASSERT(buf);
 	u8 *ptr = buf;
@@ -115,7 +112,11 @@ void spi_read_buf(Soft_SPI_hd *hd, u8 *buf, u32 len)
 }
 
 
-
+Soft_SPI_IO_Type soft_spi_io = {
+	 .w_r_byte	=   spi_tx_rx_byte,
+	 .write		=   spi_send_buf,
+	 .read		=	spi_read_buf,
+};
 
 
 

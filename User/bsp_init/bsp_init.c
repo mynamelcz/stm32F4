@@ -84,12 +84,12 @@ static void spi_sd_bsp_init(void)
 //		bsp_printf("[ERR] spi_sd_bsp_init err\n");
 //	}
 	
-	spi_sd_cs_gpio_init();
-    soft_spi_obj.init(spi_sd_cs_ctr);
-	res = spi_sd_obj.init(&soft_spi_obj);
-	if(res){
-		bsp_printf("[ERR] spi_sd_bsp_init err\n");
-	}	
+//	spi_sd_cs_gpio_init();
+//    soft_spi_obj.init(spi_sd_cs_ctr);
+//	res = spi_sd_obj.init(&soft_spi_obj);
+//	if(res){
+//		bsp_printf("[ERR] spi_sd_bsp_init err\n");
+//	}	
 	
 	
 	
